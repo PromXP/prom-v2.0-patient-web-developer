@@ -11,7 +11,7 @@ import { Raleway, Inter, Poppins } from "next/font/google";
 
 import MainBg from "@/app/assets/mainbg.png";
 import MainsubBg from "@/app/assets/mainsubbg.png";
-import Logo from "@/app/Assets/logo.png";
+import Logo from "@/app/assets/logo.png";
 import AdminImage from "@/app/assets/patientlogin.png";
 
 const raleway = Raleway({
