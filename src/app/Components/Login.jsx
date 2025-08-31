@@ -32,7 +32,7 @@ const poppins = Poppins({
   variable: "--font-inter", // optional CSS variable name
 });
 
-const Login = ({ isTermsopen, isTermsclose, userDatasend }) => {
+const Login = ({ isTermsopen, isTermsclose, onLoginSuccess  }) => {
   const useWindowSize = () => {
     const [size, setSize] = useState({
       width: 0,
@@ -68,43 +68,33 @@ const Login = ({ isTermsopen, isTermsclose, userDatasend }) => {
     if (!userUHID.trim()) return showWarning("UHID / PHONE is required");
     if (!userPassword.trim()) return showWarning("PASSWORD is required");
 
-    const payload = {
-      identifier: userUHID,
-      password: userPassword,
-      role: "patient",
-    };
-
     try {
-      const res = await axios.post(API_URL + "login", payload);
+      const res = await axios.post(`${API_URL}auth/login`, {
+        identifier: userUHID,
+        password: userPassword,
+        type: "patient",
+      });
+
       setResponse(res.data);
 
-      console.log("Login Data", res.data.user.uhid);
-
-      if (res.data.user.activation_status === 0) {
-        showWarning("Your account has been blocked. Contact Admin");
-        return 0;
-      }
+      console.log("LOGIN",res.data.user_id);
 
       // Store in sessionStorage
       if (typeof window !== "undefined") {
-        sessionStorage.setItem("uhid", res.data.user.uhid);
-        sessionStorage.setItem("password", userPassword); // ⚠️ store password only if absolutely needed
-        // console.log("User login info",res.data.user);
-        sessionStorage.setItem("userinfo", JSON.stringify(res.data.user));
+        sessionStorage.setItem("uhid", res.data.user_id);
+        sessionStorage.setItem("password", userPassword);
+        sessionStorage.setItem("activetab", "Dashboard");
+        sessionStorage.setItem("loginclose", "false"); // keep session alive for reload
+        onLoginSuccess(res.data.user_id);
       }
 
       isTermsclose();
     } catch (err) {
       showWarning("Login failed. Please check your credentials.");
-      console.error("POST error:", err);
+      // console.error("POST error:", err);
     }
   };
 
-  useEffect(() => {
-    if (response) {
-      userDatasend(response);
-    }
-  }, [response]);
 
   const showWarning = (message) => {
     setAlertMessage(message);
@@ -115,43 +105,43 @@ const Login = ({ isTermsopen, isTermsclose, userDatasend }) => {
   const [showForgotPassword, setShowForgotPassword] = useState(false);
   const [resetEmail, setResetEmail] = useState("");
 
-  const handleForgotPassword = async () => {
-    if (!userUHID) {
-      showWarning("Please enter your UHID");
-      setshowAlert(true);
-      setTimeout(() => setshowAlert(false), 3000);
-      return;
-    }
-    if (!resetEmail) {
-      showWarning("Please enter your registered Email");
-      setshowAlert(true);
-      setTimeout(() => setshowAlert(false), 3000);
-      return;
-    }
+  // const handleForgotPassword = async () => {
+  //   if (!userUHID) {
+  //     showWarning("Please enter your UHID");
+  //     setshowAlert(true);
+  //     setTimeout(() => setshowAlert(false), 3000);
+  //     return;
+  //   }
+  //   if (!resetEmail) {
+  //     showWarning("Please enter your registered Email");
+  //     setshowAlert(true);
+  //     setTimeout(() => setshowAlert(false), 3000);
+  //     return;
+  //   }
 
-    try {
-      const response = await axios.post(
-        `${API_URL}request_password_reset?uhid=${encodeURIComponent(
-          userUHID
-        )}&email=${encodeURIComponent(resetEmail)}`
-      );
+  //   try {
+  //     const response = await axios.post(
+  //       `${API_URL}request_password_reset?uhid=${encodeURIComponent(
+  //         userUHID
+  //       )}&email=${encodeURIComponent(resetEmail)}`
+  //     );
 
-      const data = response.data;
+  //     const data = response.data;
 
-      if (response.ok) {
-        showWarning("Reset link sent to your email.");
-      }
-      // else {
-      //   showWarning(data.message || "Failed to send reset link.");
-      // }
-    } catch (error) {
-      console.log("Error reset", error);
-      showWarning("Entered credentials are incorrect Check your credentials");
-    }
+  //     if (response.ok) {
+  //       showWarning("Reset link sent to your email.");
+  //     }
+  //     // else {
+  //     //   showWarning(data.message || "Failed to send reset link.");
+  //     // }
+  //   } catch (error) {
+  //     console.log("Error reset", error);
+  //     showWarning("Entered credentials are incorrect Check your credentials");
+  //   }
 
-    setshowAlert(true);
-    setTimeout(() => setshowAlert(false), 3000);
-  };
+  //   setshowAlert(true);
+  //   setTimeout(() => setshowAlert(false), 3000);
+  // };
 
   if (!isTermsopen) return null;
 
@@ -179,14 +169,26 @@ const Login = ({ isTermsopen, isTermsclose, userDatasend }) => {
             </div>
 
             <div
-              className={`${width>=550?"w-7/9 h-6/7":"w-full h-full p-2"}  bg-white rounded-[15px] flex ${width>=1000?"flex-row":"flex-col"} `}
+              className={`${
+                width >= 550 ? "w-7/9 h-6/7" : "w-full h-full p-2"
+              }  bg-white rounded-[15px] flex ${
+                width >= 1000 ? "flex-row" : "flex-col"
+              } `}
             >
               {width >= 0 && (
-                <div className={`${width>=1000?"basis-1/3 max-h-full":"basis-full h-1/2"}   py-4 pl-4 flex ${width>=1000?"flex-row":"flex-col"} justify-between items-center`}>
+                <div
+                  className={`${
+                    width >= 1000 ? "basis-1/3 max-h-full" : "basis-full h-1/2"
+                  }   py-4 pl-4 flex ${
+                    width >= 1000 ? "flex-row" : "flex-col"
+                  } justify-between items-center`}
+                >
                   <Image
                     src={AdminImage}
                     alt="Admin"
-                    className={`w-15/16 h-full object-cover  ${width>=1000?"rounded-l-xl":"rounded-xl"}`}
+                    className={`w-15/16 h-full object-cover  ${
+                      width >= 1000 ? "rounded-l-xl" : "rounded-xl"
+                    }`}
                   />
                   <div className={`bg-[#252425] opacity-20 h-7/9 w-0.5`}></div>
                 </div>
@@ -200,7 +202,11 @@ const Login = ({ isTermsopen, isTermsclose, userDatasend }) => {
                 {/* Top-left logo + role */}
 
                 {!showForgotPassword && (
-                  <div className={`flex flex-col h-fit ${width>=550?"w-5/7":"w-full"}`}>
+                  <div
+                    className={`flex flex-col h-fit ${
+                      width >= 550 ? "w-5/7" : "w-full"
+                    }`}
+                  >
                     {/* Form */}
                     <h2
                       className={`${inter.className} text-2xl font-bold mb-8 w-fit`}
@@ -291,7 +297,11 @@ const Login = ({ isTermsopen, isTermsclose, userDatasend }) => {
                   </div>
                 )}
                 {showForgotPassword && (
-                  <div className={`flex flex-col h-fit ${width>=550?"w-5/7":"w-full"}`}>
+                  <div
+                    className={`flex flex-col h-fit ${
+                      width >= 550 ? "w-5/7" : "w-full"
+                    }`}
+                  >
                     <h2
                       className={`${inter.className} text-2xl font-bold mb-8 w-fit text-[#2F447A]`}
                     >

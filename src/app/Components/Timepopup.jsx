@@ -1,5 +1,7 @@
 "use client";
 import React, { useState, useEffect, use } from "react";
+import { createPortal } from "react-dom";
+
 import { Raleway, Inter, Poppins, ABeeZee, Roboto } from "next/font/google";
 
 import "@/app/globals.css";
@@ -33,7 +35,17 @@ const roboto = Roboto({
 });
  
  const Timepopup = ({onProceed}) => {
-   return (
+
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+    return () => setMounted(false);
+  }, []);
+
+  if (!mounted) return null;
+
+   return createPortal(
       <div className="fixed inset-0 flex items-center justify-center z-50"
     style={{
         backgroundColor: "rgba(0, 0, 0, 0.7)", // white with 50% opacity
@@ -52,8 +64,9 @@ const roboto = Roboto({
           Proceed
         </button>
       </div>
-    </div>
-   )
+    </div>,
+    document.body
+   );
  }
  
  export default Timepopup

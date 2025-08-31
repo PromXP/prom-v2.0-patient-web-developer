@@ -1,5 +1,7 @@
 "use client";
 import React, { useState, useEffect, use } from "react";
+import { createPortal } from "react-dom";
+
 import { Raleway, Inter, Poppins, ABeeZee, Roboto } from "next/font/google";
 
 import "@/app/globals.css";
@@ -78,8 +80,16 @@ const Commonquestions = ({ isOpen, onClose, onSubmit }) => {
     setTimeout(() => setshowAlert(false), 4000);
   };
 
-  if (!isOpen) return null;
-  return (
+  
+    const [mounted, setMounted] = useState(false);
+  
+    useEffect(() => {
+      setMounted(true);
+      return () => setMounted(false);
+    }, []);
+  
+  if (!isOpen || !mounted) return null;
+  return createPortal (
     <div
       className="fixed inset-0 flex items-center justify-center z-50"
       style={{
@@ -160,7 +170,8 @@ const Commonquestions = ({ isOpen, onClose, onSubmit }) => {
           </div>
         </div>
       )}
-    </div>
+    </div>,
+    document.body
   );
 }
 

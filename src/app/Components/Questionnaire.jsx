@@ -4,6 +4,9 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 
+import axios from "axios";
+import { API_URL } from "../libs/global";
+
 import { Raleway, Inter, Poppins, ABeeZee } from "next/font/google";
 
 import { Bars3Icon } from "@heroicons/react/24/outline";
@@ -28,6 +31,7 @@ import Logo from "@/app/assets/logo.png";
 import Profile from "@/app/assets/profile.png";
 import Timepopup from "./Timepopup";
 import Commonquestions from "./Commonquestions";
+import Submitconfirmpop from "./Submitconfirmpop";
 
 const raleway = Raleway({
   subsets: ["latin"],
@@ -1658,10 +1662,24 @@ const Questionnaire = () => {
         scores = [score];
       }
       setIsSubmitting(true);
-      console.log("Total KSS Score:", scores);
-      return;
+      const scoreArray = scores.map((s) => parseFloat(s)); // ensure numbers
+      if (leg === "Left") {
+        const payload = {
+          uhid: sessionStorage.getItem("uhid"),
+          questionnaire_scores_left: [
+            {
+              name: questionnaireTitle,
+              score: scoreArray,
+              period: questionnairePeriod,
+              timestamp: Date.now(),
+              others: popupStringArray,
+            },
+          ],
+        };
+        console.log("Total Score:", payload);
+      }
+      // return;
       await sendQuestionnaireScores(scores, Date.now());
-      await updateQuestionnaireStatus();
 
       if (typeof window !== "undefined") {
         sessionStorage.removeItem("oks_answers");
@@ -1679,104 +1697,54 @@ const Questionnaire = () => {
   };
 
   const sendQuestionnaireScores = async (score, timestamp) => {
-    if (typeof window !== "undefined") {
-      try {
-        const uhid = sessionStorage.getItem("uhid"); // Get user UHID
-        const name = questionnaireTitle; // e.g. "Oxford Knee Score"
-        const period = questionnairePeriod; // Pre-op / Post-op or similar
+    if (typeof window === "undefined") return;
 
-        // Construct the payload
-        const scoreArray = score.map((s) => parseFloat(s)); // ensure numbers
-        if (leg === "Left") {
-          const payload = {
-            uhid: uhid,
-            questionnaire_scores_left: [
-              {
-                name: name,
-                score: scoreArray,
-                period: period,
-                timestamp: timestamp,
-                others: popupStringArray,
-              },
-            ],
-          };
-          // console.log("Sending to:", `${API_URL}add-questionnaire-scores`);
-          console.log("PUT Payload:", payload);
+    setIsSubmitting(true);
 
-          const response = await axios.put(
-            API_URL + "add-questionnaire-scores-left",
-            payload
-          );
-
-          console.log("PUT Response:", response.data);
-        }
-        if (leg === "Right") {
-          const payload = {
-            uhid: uhid,
-            questionnaire_scores_right: [
-              {
-                name: name,
-                score: scoreArray,
-                period: period,
-                timestamp: timestamp,
-                others: popupStringArray,
-              },
-            ],
-          };
-          // console.log("Sending to:", `${API_URL}add-questionnaire-scores`);
-          console.log("PUT Payload:", payload);
-
-          const response = await axios.put(
-            API_URL + "add-questionnaire-scores-right",
-            payload
-          );
-
-          console.log("PUT Response:", response.data);
-        }
-        // Optional: Show success toast or alert
-        // toast.success("Update successful!");
-
-        // Call status updater
-      } catch (error) {
-        console.error("PUT Error:", error);
-        // toast.error("Update failed!");
-      } finally {
-        setIsSubmitting(false);
-      }
-    }
-  };
-
-  const updateQuestionnaireStatus = async () => {
-    if (typeof window !== "undefined") {
+    try {
       const uhid = sessionStorage.getItem("uhid");
-      const cmp = 1;
-      try {
-        const payload = {
-          uhid: uhid,
-          name: questionnaireTitle, // same as HomeFragment.selectedquestionnaire
-          period: questionnairePeriod, // same as HomeFragment.quesperiod
-          completed: cmp,
-          leg: leg.toLowerCase(),
-        };
-
-        setIsSubmitting(false);
-
-        console.log("Sending to:", `${API_URL}update-questionnaire-status`);
-        console.log("Payload:", payload);
-
-        const response = await axios.put(
-          API_URL + "update-questionnaire-status",
-          payload
-        );
-
-        console.log("PUT Response (status):", response.data);
-        showWarning("✅ Questionnaire Submitted Successfully!");
-      } catch (error) {
-        console.error("PUT Error (status):", error);
-        // alert("❌ Failed to update questionnaire status.");
-      } finally {
-        setIsSubmitting(false);
+      if (!uhid) {
+        throw new Error("UHID not found in sessionStorage");
       }
+
+      if (!questionnaireTitle || !questionnairePeriod) {
+        throw new Error("Missing questionnaire details (title/period)");
+      }
+
+      const scoreArray = (score || []).map((s) => {
+        const num = parseFloat(s);
+        return isNaN(num) ? 0 : num; // default to 0 if invalid
+      });
+
+      const payload = {
+        uhid,
+        side: leg.toLowerCase() || "NA",
+        name: questionnaireTitle || "NA",
+        score: scoreArray,
+        period: questionnairePeriod || "NA",
+        timestamp: new Date().toISOString(),
+        others: (popupStringArray || []).map((ans) =>
+          ans && ans.trim() !== "" ? ans : "NA"
+        ),
+      };
+
+      console.log("PUT Payload:", payload);
+
+      const response = await axios.put(`${API_URL}add-score`, payload, {
+        timeout: 10000, // ⏱ timeout after 10s
+      });
+
+      showWarning("Questionnaire submitted successfully!");
+    } catch (error) {
+      let message = "Something went wrong. Please try again.";
+
+      if (error instanceof Error) {
+        message = error.message;
+      }
+
+      showWarning(message);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -1787,7 +1755,7 @@ const Questionnaire = () => {
       if (arr.length > 0) {
         const answer = arr[0]; // assuming single-answer selection per question
         const match = answer.match(/\((\d+)\)/);
-        console.log("Total Answer:", answer+" "+match);
+        console.log("Total Answer:", answer + " " + match);
         if (match) {
           totalScore += parseInt(match[1]);
         }
@@ -2010,8 +1978,18 @@ const Questionnaire = () => {
       }
 
       if (storedPopupAnswers) {
+        let parsedAnswers = JSON.parse(storedPopupAnswers);
+
+        // Replace empty values with "NA"
+        parsedAnswers = parsedAnswers.map((ans) => {
+          const [key, value] = ans.split(":");
+          return `${key}: ${
+            value && value.trim() !== "" ? value.trim() : "NA"
+          }`;
+        });
+
         setPopupOpen(false);
-        setPopupStringArray(JSON.parse(storedPopupAnswers));
+        setPopupStringArray(parsedAnswers);
       }
     }
   }, []);
@@ -2023,6 +2001,7 @@ const Questionnaire = () => {
     }
     setPopupOpen(true);
   };
+
   const handlePopupSubmit = (data) => {
     const stringArray = Object.entries(data).map(
       ([key, value]) => `${key}: ${value}`
@@ -2201,35 +2180,10 @@ const Questionnaire = () => {
         onSubmit={handlePopupSubmit}
       />
       {showConfirmation && (
-        <div
-          className="fixed inset-0 flex items-center justify-center z-50"
-          style={{
-            backgroundColor: "rgba(0, 0, 0, 0.7)", // white with 50% opacity
-          }}
-        >
-          <div className="bg-white rounded-lg shadow-lg p-6 w-[90%] max-w-md flex flex-col gap-4">
-            <h2 className="text-xl font-bold text-center text-gray-800">
-              Confirm Submission
-            </h2>
-            <p className="text-gray-600 text-center">
-              Are you sure you want to submit the Questionnaire?
-            </p>
-            <div className="flex justify-between mt-4">
-              <button
-                onClick={handleCancelSubmit}
-                className="px-4 py-2 bg-gray-300 text-gray-800 rounded-md hover:bg-gray-400 cursor-pointer"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleConfirmSubmit}
-                className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 cursor-pointer"
-              >
-                Confirm
-              </button>
-            </div>
-          </div>
-        </div>
+        <Submitconfirmpop
+          onCancel={handleCancelSubmit}
+          onConfirm={handleConfirmSubmit}
+        />
       )}
       {showAlert && (
         <div className="fixed top-8 left-1/2 transform -translate-x-1/2 z-50">
