@@ -1553,7 +1553,7 @@ const Questionnaire = () => {
       selectedQuestions = oks;
     } else if (t === "forgotten joint score (fjs)") {
       selectedQuestions = fjs;
-    } else if (t.includes("koos, jr")) {
+    } else if (t.includes("koos jr")) {
       selectedQuestions = koos;
     } else if (t === "knee society score (kss)") {
       const p = questionnairePeriod.trim().toLowerCase();
@@ -1735,6 +1735,8 @@ const Questionnaire = () => {
       });
 
       showWarning("Questionnaire submitted successfully!");
+      router.replace("/");
+
     } catch (error) {
       let message = "Something went wrong. Please try again.";
 
