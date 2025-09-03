@@ -116,6 +116,14 @@ export default function Home() {
     }
   };
 
+  const dashboardpage = () => {
+    if (activeTab === "Questionnaire") {
+      setActiveTab("Dashboard"); // switch tab only when question is clicked
+      sessionStorage.setItem("activetab", "Dashboard");
+      window.location.reload();
+    }
+  };
+
   const handleOpen = () => {
     setIsFullyHidden(false); // show it
     requestAnimationFrame(() => {
@@ -223,7 +231,7 @@ useEffect(() => {
         );
 
       case "Questionnaire":
-        return <Questionnaire />;
+        return <Questionnaire dashboardpage={dashboardpage} />;
 
       default:
         return null;

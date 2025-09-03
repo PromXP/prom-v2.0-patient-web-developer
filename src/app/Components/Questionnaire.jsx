@@ -56,7 +56,7 @@ const abeezee = ABeeZee({
   variable: "--font-abeezee", // use a matching variable name
 });
 
-const Questionnaire = () => {
+const Questionnaire = ({dashboardpage}) => {
   const router = useRouter();
   const useWindowSize = () => {
     const [size, setSize] = useState({
@@ -1553,7 +1553,7 @@ const Questionnaire = () => {
       selectedQuestions = oks;
     } else if (t === "forgotten joint score (fjs)") {
       selectedQuestions = fjs;
-    } else if (t.includes("koos jr")) {
+    } else if (t.includes("koos, jr")) {
       selectedQuestions = koos;
     } else if (t === "knee society score (kss)") {
       const p = questionnairePeriod.trim().toLowerCase();
@@ -1735,7 +1735,7 @@ const Questionnaire = () => {
       });
 
       showWarning("Questionnaire submitted successfully!");
-      router.replace("/");
+      dashboardpage();
 
     } catch (error) {
       let message = "Something went wrong. Please try again.";

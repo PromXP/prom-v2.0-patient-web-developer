@@ -105,7 +105,7 @@ const Dashboard = ({ questionnairepage, patient }) => {
       questions = 12;
       duration = "10–15 min";
     } else if (name.includes("koos")) {
-      title = "Knee injury and Osteoarthritis Outcome Score (KOOS JR)";
+      title = "Knee Injury and Osteoarthritis Outcome Score, Joint Replacement (KOOS, JR)";
       questions = 7;
       duration = "10–12 min";
     } else if (name.includes("knee society score") || name.includes("kss")) {
