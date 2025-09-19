@@ -1631,7 +1631,7 @@ const Questionnaire = ({dashboardpage}) => {
       const ans = answers[idx];
       return !ans || ans.length === 0;
     });
-    console.log("Answers", answers);
+    // console.log("Answers", answers);
 
     if (unanswered.length > 0) {
       setWarning("Please answer all questions before submitting.");
@@ -1646,11 +1646,11 @@ const Questionnaire = ({dashboardpage}) => {
       if (
         t === "oxford knee score (oks)" ||
         t ===
-          "knee injury and ostheoarthritis outcome score, joint replacement (koos, jr)" ||
+          "knee injury and osteoarthritis outcome score, joint replacement (koos, jr)" ||
         t === "forgotten joint score (fjs)"
       ) {
         const total = calculateTotalScore(answers);
-        // console.log("Total Score:", total);
+        console.log("Total Score:", total);
         scores = [total];
       } else if (t === "short form - 12 (sf-12)") {
         const [total, pcs, mcs] = calculateSF12Scores(answers);
@@ -1730,7 +1730,7 @@ const Questionnaire = ({dashboardpage}) => {
 
       console.log("PUT Payload:", payload);
 
-      const response = await axios.put(`${API_URL}add-score`, payload, {
+      const response = await axios.put(`${API_URL}questionnaires/update-score`, payload, {
         timeout: 10000, // ⏱ timeout after 10s
       });
 
@@ -1752,7 +1752,7 @@ const Questionnaire = ({dashboardpage}) => {
 
   function calculateTotalScore(answers) {
     let totalScore = 0;
-
+console.log("Answers:", answers);
     Object.values(answers).forEach((arr) => {
       if (arr.length > 0) {
         const answer = arr[0]; // assuming single-answer selection per question
@@ -1763,7 +1763,7 @@ const Questionnaire = ({dashboardpage}) => {
         }
       }
     });
-
+console.log("Answers:", totalScore);
     return totalScore;
   }
 

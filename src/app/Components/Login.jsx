@@ -72,20 +72,20 @@ const Login = ({ isTermsopen, isTermsclose, onLoginSuccess  }) => {
       const res = await axios.post(`${API_URL}auth/login`, {
         identifier: userUHID,
         password: userPassword,
-        type: "patient",
+        role: "patient",
       });
 
       setResponse(res.data);
 
-      console.log("LOGIN",res.data.user_id);
+      console.log("LOGIN",res.data.user.uhid);
 
       // Store in sessionStorage
       if (typeof window !== "undefined") {
-        sessionStorage.setItem("uhid", res.data.user_id);
+        sessionStorage.setItem("uhid", res.data.user.uhid);
         sessionStorage.setItem("password", userPassword);
         sessionStorage.setItem("activetab", "Dashboard");
         sessionStorage.setItem("loginclose", "false"); // keep session alive for reload
-        onLoginSuccess(res.data.user_id);
+        onLoginSuccess(res.data.user.uhid);
       }
 
       isTermsclose();

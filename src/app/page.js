@@ -188,12 +188,12 @@ useEffect(() => {
 
   const fetchPatientReminder = async () => {
     try {
-      const res = await axios.get(`${API_URL}patients-by-uhid/${uhid}`);
+      const res = await axios.get(`${API_URL}patients/${uhid}`);
       const patient = res.data.patient;
 
       const pickedData = {
         name: patient.Patient?.name ?? "NA",
-        uhid: patient.uhid ?? "NA",
+        uhid: patient.Patient?.uhid ?? "NA",
         left_doctor: patient.Practitioners?.left_doctor !== "NA"
           ? patient.Practitioners?.left_doctor
           : "Doctor",
