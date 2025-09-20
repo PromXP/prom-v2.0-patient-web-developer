@@ -164,15 +164,15 @@ useEffect(() => {
   let merged = [...leftData, ...rightData];
 
   // 🔹 Step 2: Filter by deadline rules
-  // merged = merged.filter((q) => {
-  //   if (!q.deadline) return false;
+  merged = merged.filter((q) => {
+    if (!q.deadline) return false;
 
-  //   const deadlineDate = new Date(q.deadline);
-  //   const diffDays = (today - deadlineDate) / (1000 * 60 * 60 * 24);
+    const deadlineDate = new Date(q.deadline);
+    const diffDays = (today - deadlineDate) / (1000 * 60 * 60 * 24);
 
-  //   // Include if deadline passed or within -14 days
-  //   return today >= deadlineDate || (diffDays > -14 && diffDays < 0);
-  // });
+    // Include if deadline passed or within -14 days
+    return today >= deadlineDate || (diffDays > -14 && diffDays < 0);
+  });
 
   // 🔹 Step 3: Sort
   merged.sort((a, b) => {
@@ -313,7 +313,7 @@ useEffect(() => {
                 <p
                   className={`${abeezee.className} font-normal text-lg text-black`}
                 >
-                  {item.leg} Knee
+                  {item.leg} Knee | {item.periodShort}
                 </p>
               </div>
 

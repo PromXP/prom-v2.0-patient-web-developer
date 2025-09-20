@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 
 import axios from "axios";
 
@@ -23,6 +24,7 @@ import {
   ChevronLeftIcon,
   ClipboardDocumentCheckIcon,
   XMarkIcon,
+  ArrowRightStartOnRectangleIcon,
 } from "@heroicons/react/16/solid";
 
 import MainBg from "@/app/assets/mainbg.png";
@@ -63,7 +65,6 @@ const roboto = Roboto({
   variable: "--font-roboto", // use a matching variable name
 });
 
-
 export default function Home() {
   const useWindowSize = () => {
     const [size, setSize] = useState({
@@ -88,6 +89,8 @@ export default function Home() {
   };
 
   const { width, height } = useWindowSize();
+
+  const router = useRouter();
 
   const [isOpenacc, setIsOpenacc] = useState(false);
   const [activeTab, setActiveTab] = useState(() => {
@@ -170,52 +173,51 @@ export default function Home() {
   const [uhid, setUhid] = useState(null);
 
   useEffect(() => {
-  const handleStorageChange = () => {
-    const storedUhid = sessionStorage.getItem("uhid");
-    if (storedUhid) setUhid(storedUhid);
-  };
+    const handleStorageChange = () => {
+      const storedUhid = sessionStorage.getItem("uhid");
+      if (storedUhid) setUhid(storedUhid);
+    };
 
-  window.addEventListener("storage", handleStorageChange);
-  handleStorageChange(); // run once at mount
+    window.addEventListener("storage", handleStorageChange);
+    handleStorageChange(); // run once at mount
 
-  return () => window.removeEventListener("storage", handleStorageChange);
-}, [uhid]);
+    return () => window.removeEventListener("storage", handleStorageChange);
+  }, [uhid]);
 
+  useEffect(() => {
+    if (!uhid) return; // wait until uhid is set
 
-useEffect(() => {
-  
-  if (!uhid) return; // wait until uhid is set
+    const fetchPatientReminder = async () => {
+      try {
+        const res = await axios.get(`${API_URL}patients/${uhid}`);
+        const patient = res.data.patient;
 
-  const fetchPatientReminder = async () => {
-    try {
-      const res = await axios.get(`${API_URL}patients/${uhid}`);
-      const patient = res.data.patient;
+        const pickedData = {
+          name: patient.Patient?.name ?? "NA",
+          uhid: patient.Patient?.uhid ?? "NA",
+          left_doctor:
+            patient.Practitioners?.left_doctor !== "NA"
+              ? patient.Practitioners?.left_doctor
+              : "Doctor",
+          right_doctor:
+            patient.Practitioners?.right_doctor !== "NA"
+              ? patient.Practitioners?.right_doctor
+              : "Doctor",
+          questionnaire_left: patient.Medical_Left ?? {},
+          questionnaire_right: patient.Medical_Right ?? {},
+        };
 
-      const pickedData = {
-        name: patient.Patient?.name ?? "NA",
-        uhid: patient.Patient?.uhid ?? "NA",
-        left_doctor: patient.Practitioners?.left_doctor !== "NA"
-          ? patient.Practitioners?.left_doctor
-          : "Doctor",
-        right_doctor: patient.Practitioners?.right_doctor !== "NA"
-          ? patient.Practitioners?.right_doctor
-          : "Doctor",
-        questionnaire_left: patient.Medical_Left ?? {},
-        questionnaire_right: patient.Medical_Right ?? {},
-      };
+        setpatientbasic(pickedData);
+        console.log("Data", pickedData);
+        sessionStorage.setItem("loginclose", "false");
+        setloginopen(false);
+      } catch (err) {
+        console.error("Error fetching patient reminder:", err);
+      }
+    };
 
-      setpatientbasic(pickedData);
-      console.log("Data",pickedData);
-      sessionStorage.setItem("loginclose", "false");
-      setloginopen(false);
-    } catch (err) {
-      console.error("Error fetching patient reminder:", err);
-    }
-  };
-
-  fetchPatientReminder();
-}, [uhid]);
-
+    fetchPatientReminder();
+  }, [uhid]);
 
   const renderSelectedcomponent = () => {
     switch (activeTab) {
@@ -236,6 +238,75 @@ useEffect(() => {
       default:
         return null;
     }
+  };
+
+  useEffect(() => {
+    let patientPassword = null;
+
+    if (typeof window !== "undefined") {
+      patientPassword = sessionStorage.getItem("password"); // 👈 safe access
+    }
+
+    if (patientPassword === "patient@123") {
+      setTermsopen(true);
+    }
+  }, []);
+
+  const [showresetpassword, setshowresetpassword] = useState(false);
+
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+
+  const handleResetPassword = async () => {
+    if (!newPassword || !confirmPassword) {
+      showWarning("Please fill in both fields");
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      showWarning("Passwords do not match");
+      return;
+    }
+    let adminUhid = null;
+    if (typeof window !== "undefined") {
+      adminUhid = sessionStorage.getItem("uhid"); // 👈 safe access
+    }
+
+    const payload = {
+      uhid: adminUhid,
+      role: "patient",
+      new_password: newPassword,
+    };
+
+    try {
+      await axios.patch(`${API_URL}auth/reset-password`, payload);
+
+      showWarning(`Password reset successfull`);
+      if (typeof window !== "undefined") {
+        sessionStorage.setItem("admin_password", newPassword); // 👈 safe access
+      }
+    } catch (error) {
+      console.error("Error reset password:", error);
+      showWarning(`Failed to reset password for ${adminUhid}`);
+    }
+  };
+
+  const [showAlert, setshowAlert] = useState(false);
+  const [alermessage, setAlertMessage] = useState("");
+  const showWarning = (message) => {
+    setAlertMessage(message);
+    setshowAlert(true);
+    setTimeout(() => setshowAlert(false), 4000);
+  };
+
+  const handlelogout = () => {
+    setloginopen(true);
+    if (typeof window !== "undefined") {
+      sessionStorage.removeItem("activetab");
+      sessionStorage.removeItem("uhid");
+      sessionStorage.removeItem("password");
+      sessionStorage.removeItem("activetab");
+      sessionStorage.setItem("loginclose", "false");
+      }
   };
 
   return (
@@ -293,20 +364,26 @@ useEffect(() => {
                         </button>
                       ))}
                     </div>
-                    <div
-                      className={`w-fit flex flex-row h-full items-center gap-4`}
-                    >
-                      <p
-                        className={`${inter.className} font-semibold text-[#29272A]`}
-                      >
-                        {patientbasic?.uhid|| "Patient Name"}
-                      </p>
-
-                      <Image
-                        src={Profile}
-                        alt="Support"
-                        className="w-10 h-10"
+                    <div className="w-2/7 flex flex-row items-center justify-end gap-8">
+                      <ArrowRightStartOnRectangleIcon
+                        className="w-6 h-6 text-black cursor-pointer"
+                        onClick={handlelogout}
                       />
+                      <div
+                        className={`w-fit flex flex-row h-full items-center gap-4`}
+                      >
+                        <p
+                          className={`${inter.className} font-semibold text-[#29272A]`}
+                        >
+                          {patientbasic?.uhid || "Patient Name"}
+                        </p>
+
+                        <Image
+                          src={Profile}
+                          alt="Support"
+                          className="w-10 h-10"
+                        />
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -360,7 +437,7 @@ useEffect(() => {
                   <div className="w-full flex flex-row items-center justify-center gap-6 py-4">
                     <Image src={Profile} alt="Support" className="w-10 h-10" />
                     <p className="font-semibold text-[#29272A]">
-                      {patientbasic?.uhid|| "Patient Name"}
+                      {patientbasic?.uhid || "Patient Name"}
                     </p>
                   </div>
                   <nav className="p-4 space-y-4">
@@ -575,7 +652,10 @@ useEffect(() => {
             <div className={`w-full flex justify-end`}>
               <div className="flex space-x-4 ">
                 <button
-                  onClick={()=>{setTermsopen(false);}}
+                  onClick={() => {
+                    setTermsopen(false);
+                    setshowresetpassword(true);
+                  }}
                   className={`${raleway.className} font-semibold text-lg px-12 py-2 rounded-md  bg-[#2F447A] text-white cursor-pointer`}
                 >
                   Agree
@@ -601,6 +681,99 @@ useEffect(() => {
       }
     `}
           </style>
+        </div>
+      )}
+
+      {showresetpassword && (
+        <div
+          className="fixed inset-0 z-40 flex items-center justify-center"
+          style={{
+            backgroundColor: "rgba(0, 0, 0, 0.5)", // white with 50% opacity
+          }}
+        >
+          <div
+            className={`
+    h-fit flex flex-col items-center justify-center mx-auto my-auto bg-white p-8 rounded-2xl
+    ${width < 950 ? "gap-4 w-full" : "w-1/2"}
+  `}
+          >
+            <h2
+              className={`${raleway.className} text-2xl font-semibold text-gray-800 mb-6`}
+            >
+              Reset Password
+            </h2>
+
+            <div className={`${poppins.className} w-full flex flex-col gap-8`}>
+              {/* New Password */}
+              <div className="flex flex-col gap-1">
+                <label className="text-base text-gray-700">New Password</label>
+                <input
+                  type="password"
+                  className="w-full border-b-2 border-gray-400 outline-none px-2 py-2 text-lg bg-transparent text-black"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  placeholder="Enter new password"
+                />
+              </div>
+
+              {/* Confirm Password */}
+              <div className="flex flex-col gap-1">
+                <label className="text-base text-gray-700">
+                  Confirm Password
+                </label>
+                <input
+                  type="text"
+                  className="w-full border-b-2 border-gray-400 outline-none px-2 py-2 text-lg bg-transparent text-black"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  placeholder="Confirm new password"
+                />
+              </div>
+
+              {/* Submit Button */}
+              <button
+                onClick={handleResetPassword}
+                className="cursor-pointer mt-4 w-full bg-[#319B8F] text-white font-semibold py-2 rounded-lg hover:bg-[#26776f] transition-all"
+              >
+                Reset Password
+              </button>
+            </div>
+          </div>
+
+          {showAlert && (
+            <div className="fixed top-8 left-1/2 transform -translate-x-1/2 z-50">
+              <div className="bg-yellow-100 border border-yellow-400 text-yellow-800 px-6 py-3 rounded-lg shadow-lg animate-fade-in-out">
+                {alermessage}
+              </div>
+            </div>
+          )}
+
+          <style>
+            {`
+                .inline-scroll::-webkit-scrollbar {
+                  width: 12px;
+                }
+                .inline-scroll::-webkit-scrollbar-track {
+                  background: transparent;
+                }
+                .inline-scroll::-webkit-scrollbar-thumb {
+                  background-color: #076C40;
+                  border-radius: 8px;
+                }
+          
+                .inline-scroll {
+                  scrollbar-color: #076C40 transparent;
+                }
+              `}
+          </style>
+
+          {showAlert && (
+            <div className="fixed top-8 left-1/2 transform -translate-x-1/2 z-50">
+              <div className="bg-yellow-100 border border-yellow-400 text-yellow-800 px-6 py-3 rounded-lg shadow-lg animate-fade-in-out">
+                {alertMessage}
+              </div>
+            </div>
+          )}
         </div>
       )}
 
