@@ -282,8 +282,9 @@ export default function Home() {
 
       showWarning(`Password reset successfull`);
       if (typeof window !== "undefined") {
-        sessionStorage.setItem("admin_password", newPassword); // 👈 safe access
+        sessionStorage.setItem("password", newPassword); // 👈 safe access
       }
+      window.location.reload();
     } catch (error) {
       console.error("Error reset password:", error);
       showWarning(`Failed to reset password for ${adminUhid}`);
@@ -770,7 +771,7 @@ export default function Home() {
           {showAlert && (
             <div className="fixed top-8 left-1/2 transform -translate-x-1/2 z-50">
               <div className="bg-yellow-100 border border-yellow-400 text-yellow-800 px-6 py-3 rounded-lg shadow-lg animate-fade-in-out">
-                {alertMessage}
+                {alermessage}
               </div>
             </div>
           )}
