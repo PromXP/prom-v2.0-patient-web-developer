@@ -104,6 +104,7 @@ const Login = ({ isTermsopen, isTermsclose, onLoginSuccess  }) => {
 
   const [showForgotPassword, setShowForgotPassword] = useState(false);
   const [resetEmail, setResetEmail] = useState("");
+  const [resetUHID, setresetUHID] = useState("");
 
   // const handleForgotPassword = async () => {
   //   if (!userUHID) {
@@ -142,6 +143,47 @@ const Login = ({ isTermsopen, isTermsclose, onLoginSuccess  }) => {
   //   setshowAlert(true);
   //   setTimeout(() => setshowAlert(false), 3000);
   // };
+
+
+  const handlereset = async (e) => {
+    if (!resetUHID) {
+      showWarning("Please enter your UHID");
+      return;
+    }
+    if (!resetEmail) {
+      showWarning("Please enter your registered email");
+      return;
+    }
+
+    try {
+      const res = await axios.post(`${API_URL}request_password_reset?uhid=${resetUHID}&email=${resetEmail}`);
+
+
+      showWarning("Password reset link sent to you registered email");
+      setloginlock(false);
+      setuserUHID("");
+      setuserPassword("");
+    } catch (err) {
+      setloginlock(false);
+      setuserUHID("");
+      setuserPassword("");
+      if (err.response) {
+        let errorMsg = err.response.data?.detail || "Login failed";
+
+        // If detail is an object (like FastAPI validation error), stringify it
+        if (typeof errorMsg === "object") {
+          errorMsg = JSON.stringify(errorMsg);
+        }
+
+        showWarning(errorMsg);
+      } else if (err.request) {
+        showWarning("No response from server");
+      } else {
+        showWarning("Network error");
+      }
+    }
+  };
+
 
   if (!isTermsopen) return null;
 
@@ -313,14 +355,14 @@ const Login = ({ isTermsopen, isTermsclose, onLoginSuccess  }) => {
                       }`}
                       onSubmit={(e) => {
                         e.preventDefault(); // Prevent form reload
-                        handleForgotPassword(); // Call your login function
+                        handlereset(); // Call your login function
                       }}
                     >
                       <input
                         type="text"
                         placeholder="UHID"
-                        value={userUHID}
-                        onChange={(e) => setuserUHID(e.target.value)}
+                        value={resetUHID}
+                        onChange={(e) => setresetUHID(e.target.value)}
                         className={`${poppins.className} rounded-md p-3 text-sm text-gray-900 placeholder-black bg-[#F2F2F2] focus:outline-none focus:ring-2 focus:ring-teal-400`}
                       />
                       <input
