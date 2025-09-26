@@ -57,6 +57,8 @@ const Login = ({ isTermsopen, isTermsclose, onLoginSuccess  }) => {
 
   const { width, height } = useWindowSize();
 
+   const [loginlock, setloginlock] = useState(false);
+
   const [userUHID, setuserUHID] = useState("");
   const [userPassword, setuserPassword] = useState("");
   const [showPassword, setshowPassword] = useState(false);
@@ -67,7 +69,7 @@ const Login = ({ isTermsopen, isTermsclose, onLoginSuccess  }) => {
   const fetchData = async () => {
     if (!userUHID.trim()) return showWarning("UHID / PHONE is required");
     if (!userPassword.trim()) return showWarning("PASSWORD is required");
-
+     setloginlock(true);
     try {
       const res = await axios.post(`${API_URL}auth/login`, {
         identifier: userUHID,
@@ -77,7 +79,7 @@ const Login = ({ isTermsopen, isTermsclose, onLoginSuccess  }) => {
 
       setResponse(res.data);
 
-      console.log("LOGIN",res.data.user.uhid);
+      // console.log("LOGIN",res.data.user.uhid);
 
       // Store in sessionStorage
       if (typeof window !== "undefined") {
@@ -87,9 +89,11 @@ const Login = ({ isTermsopen, isTermsclose, onLoginSuccess  }) => {
         sessionStorage.setItem("loginclose", "false"); // keep session alive for reload
         onLoginSuccess(res.data.user.uhid);
       }
-
+setloginlock(false);
       isTermsclose();
+
     } catch (err) {
+      setloginlock(false);
       showWarning("Login failed. Please check your credentials.");
       // console.error("POST error:", err);
     }
@@ -333,7 +337,34 @@ const Login = ({ isTermsopen, isTermsclose, onLoginSuccess  }) => {
                         type="submit"
                         className={`${raleway.className} w-full text-lg cursor-pointer bg-[#2F447A] text-white rounded-md py-1 font-semibold hover:bg-gray-800 transition`}
                       >
-                        Sign In
+                        {loginlock ? (
+                        // Spinner + text
+                        <div className="flex items-center justify-center space-x-2">
+                          <svg
+                            className="animate-spin h-5 w-5 text-white"
+                            xmlns="http://www.w3.org/2000/svg"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                          >
+                            <circle
+                              className="opacity-25"
+                              cx="12"
+                              cy="12"
+                              r="10"
+                              stroke="currentColor"
+                              strokeWidth="4"
+                            />
+                            <path
+                              className="opacity-75"
+                              fill="currentColor"
+                              d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+                            />
+                          </svg>
+                          <span>Logging in...</span>
+                        </div>
+                      ) : (
+                        "Login"
+                      )}
                       </button>
                     </form>
                   </div>

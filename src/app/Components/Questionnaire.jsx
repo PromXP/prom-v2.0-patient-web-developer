@@ -1545,7 +1545,7 @@ const Questionnaire = ({dashboardpage}) => {
     if (!questionnaireTitle) return;
 
     const t = questionnaireTitle.trim().toLowerCase();
-    console.log("Questionnaire", t);
+    // console.log("Questionnaire", t);
 
     let selectedQuestions = [];
 
@@ -1557,7 +1557,7 @@ const Questionnaire = ({dashboardpage}) => {
       selectedQuestions = koos;
     } else if (t === "knee society score (kss)") {
       const p = questionnairePeriod.trim().toLowerCase();
-      console.log("Inside kss", p);
+      // console.log("Inside kss", p);
       selectedQuestions = p.includes("pre") ? ksspreop : ksspostop;
     } else if (t === "short form - 12 (sf-12)") {
       selectedQuestions = sf;
@@ -1569,7 +1569,7 @@ const Questionnaire = ({dashboardpage}) => {
         options: shuffleArray(q.options),
       }));
       setQuestions(shuffledQuestions);
-      console.log("Questions loaded", shuffledQuestions);
+      // console.log("Questions loaded", shuffledQuestions);
     }
   }, [questionnaireTitle, questionnairePeriod]);
 
@@ -1619,7 +1619,7 @@ const Questionnaire = ({dashboardpage}) => {
       sessionStorage.setItem("oks_answers", JSON.stringify(updatedAnswers));
     }
 
-    console.log("Selected options", updatedAnswers);
+    // console.log("Selected options", updatedAnswers);
   };
 
   const handleSubmit = async () => {
@@ -1638,7 +1638,7 @@ const Questionnaire = ({dashboardpage}) => {
       setTimeout(() => setWarning(false), 2500);
     } else {
       setWarning("");
-      console.log("Submitted answers:", answers);
+      // console.log("Submitted answers:", answers);
       const t = questionnaireTitle.trim().toLowerCase();
 
       let scores = [];
@@ -1650,15 +1650,15 @@ const Questionnaire = ({dashboardpage}) => {
         t === "forgotten joint score (fjs)"
       ) {
         const total = calculateTotalScore(answers);
-        console.log("Total Score:", total);
+        // console.log("Total Score:", total);
         scores = [total];
       } else if (t === "short form - 12 (sf-12)") {
         const [total, pcs, mcs] = calculateSF12Scores(answers);
-        console.log("SF-12 Scores -> Total:", total, "PCS:", pcs, "MCS:", mcs);
+        // console.log("SF-12 Scores -> Total:", total, "PCS:", pcs, "MCS:", mcs);
         scores = [total, pcs, mcs];
       } else if (t === "knee society score (kss)") {
         const score = calculateKneeSocietyScore(answers);
-        console.log("KSS Normalized Score:", score);
+        // console.log("KSS Normalized Score:", score);
         scores = [score];
       }
       setIsSubmitting(true);
@@ -1676,7 +1676,7 @@ const Questionnaire = ({dashboardpage}) => {
             },
           ],
         };
-        console.log("Total Score:", payload);
+        // console.log("Total Score:", payload);
       }
       // return;
       await sendQuestionnaireScores(scores, Date.now());
@@ -1692,7 +1692,7 @@ const Questionnaire = ({dashboardpage}) => {
       }
       setShowConfirmation(false);
       router.replace("/");
-      console.log("Submitted answers:", answers);
+      // console.log("Submitted answers:", answers);
     }
   };
 
@@ -1728,7 +1728,7 @@ const Questionnaire = ({dashboardpage}) => {
         ),
       };
 
-      console.log("PUT Payload:", payload);
+      // console.log("PUT Payload:", payload);
 
       const response = await axios.put(`${API_URL}questionnaires/update-score`, payload, {
         timeout: 10000, // ⏱ timeout after 10s
@@ -1752,18 +1752,18 @@ const Questionnaire = ({dashboardpage}) => {
 
   function calculateTotalScore(answers) {
     let totalScore = 0;
-console.log("Answers:", answers);
+// console.log("Answers:", answers);
     Object.values(answers).forEach((arr) => {
       if (arr.length > 0) {
         const answer = arr[0]; // assuming single-answer selection per question
         const match = answer.match(/\((\d+)\)/);
-        console.log("Total Answer:", answer + " " + match);
+        // console.log("Total Answer:", answer + " " + match);
         if (match) {
           totalScore += parseInt(match[1]);
         }
       }
     });
-console.log("Answers:", totalScore);
+// console.log("Answers:", totalScore);
     return totalScore;
   }
 
@@ -1781,7 +1781,7 @@ console.log("Answers:", totalScore);
       const answer1 = answer[0]; // assuming single-answer selection per question
       const match = answer1.match(/\(([-]?\d+)\)/);
 
-      console.log("Total KSS Pre Op Answers: ", i + " " + match[1]);
+      // console.log("Total KSS Pre Op Answers: ", i + " " + match[1]);
 
       if (i < 5) {
         if (answerText.includes("(0)")) score = 4;
@@ -1803,7 +1803,7 @@ console.log("Answers:", totalScore);
       }
       totalScore += score1;
     }
-    console.log("Total KSS Pre Op Answers: ", totalScore);
+    // console.log("Total KSS Pre Op Answers: ", totalScore);
 
     const minScore = -7;
     const maxScore = 180;
@@ -1868,7 +1868,7 @@ console.log("Answers:", totalScore);
       } else {
         score = (value - 1) * (100 / (max - 1));
       }
-      console.log("SF 12", i + " " + value + " " + max);
+      // console.log("SF 12", i + " " + value + " " + max);
 
       rawScores[i] = score;
     }
@@ -1973,7 +1973,7 @@ console.log("Answers:", totalScore);
       const storedPopupAnswers = sessionStorage.getItem("popup_answers");
       const timepop = sessionStorage.getItem("timepopup");
 
-      console.log("Timepopup status", timepop);
+      // console.log("Timepopup status", timepop);
 
       if (timepop !== null) {
         setShowInitialPopup(timepop === "true"); // <-- Convert properly
@@ -2013,7 +2013,7 @@ console.log("Answers:", totalScore);
     if (typeof window !== "undefined") {
       sessionStorage.setItem("popup_answers", JSON.stringify(stringArray));
     }
-    console.log("Converted Array:", popupStringArray);
+    // console.log("Converted Array:", popupStringArray);
   };
 
   const [showAlert, setshowAlert] = useState(false);
@@ -2027,12 +2027,12 @@ console.log("Answers:", totalScore);
   };
 
   const handleCancelSubmit = () => {
-    console.log("Submission cancelled.");
+    // console.log("Submission cancelled.");
     setShowConfirmation(false);
   };
 
   const handleConfirmSubmit = () => {
-    console.log("Form submitted successfully!");
+    // console.log("Form submitted successfully!");
     handleSubmit();
   };
 

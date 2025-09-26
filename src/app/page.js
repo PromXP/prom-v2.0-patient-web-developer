@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 
@@ -92,6 +92,19 @@ export default function Home() {
 
   const router = useRouter();
 
+  const [canAgree, setCanAgree] = useState(false);
+  const scrollRef = useRef(null);
+
+  // check scroll position
+  const handleScroll = () => {
+    const el = scrollRef.current;
+    if (!el || canAgree) return; // already true, no need to check
+
+    if (el.scrollTop + el.clientHeight >= el.scrollHeight - 5) {
+      setCanAgree(true);
+    }
+  };
+
   const [isOpenacc, setIsOpenacc] = useState(false);
   const [activeTab, setActiveTab] = useState(() => {
     if (typeof window !== "undefined") {
@@ -167,7 +180,24 @@ export default function Home() {
   const [termsopen, setTermsopen] = useState(false);
   const [passopen, setpassopen] = useState(false);
 
-  const [loginopen, setloginopen] = useState(true);
+  const [loginopen, setloginopen] = useState(() => {
+    if (typeof window !== "undefined") {
+      const stored = sessionStorage.getItem("loginclose");
+      return stored === "false" ? false : true;
+    }
+    return false; // fallback for SSR
+  });
+
+useEffect(() => {
+  if (typeof window !== "undefined") {
+    const stored = sessionStorage.getItem("loginclose");
+    if (stored === "false") {
+      setloginopen(false);
+    } else {
+      setloginopen(true);
+    }
+  }
+}, []);
 
   const [patientbasic, setpatientbasic] = useState({});
   const [uhid, setUhid] = useState(null);
@@ -208,11 +238,12 @@ export default function Home() {
         };
 
         setpatientbasic(pickedData);
-        console.log("Data", pickedData);
+        // console.log("Data", pickedData);
         sessionStorage.setItem("loginclose", "false");
         setloginopen(false);
       } catch (err) {
-        console.error("Error fetching patient reminder:", err);
+        showWarning(err);
+        // console.error("Error fetching patient reminder:", err);
       }
     };
 
@@ -286,7 +317,7 @@ export default function Home() {
       }
       window.location.reload();
     } catch (error) {
-      console.error("Error reset password:", error);
+      // console.error("Error reset password:", error);
       showWarning(`Failed to reset password for ${adminUhid}`);
     }
   };
@@ -300,15 +331,18 @@ export default function Home() {
   };
 
   const handlelogout = () => {
+    console.clear();
     setloginopen(true);
     if (typeof window !== "undefined") {
       sessionStorage.removeItem("activetab");
       sessionStorage.removeItem("uhid");
       sessionStorage.removeItem("password");
       sessionStorage.removeItem("activetab");
-      sessionStorage.setItem("loginclose", "false");
-      }
+      sessionStorage.setItem("loginclose", "true");
+    }
   };
+
+  const [showPassword, setshowPassword] = useState(false);
 
   return (
     <div className="relative bg-[#CFDADE] min-h-screen w-full overflow-x-hidden">
@@ -401,6 +435,7 @@ export default function Home() {
                       Patient
                     </span>
                   </div>
+                  
                   <button onClick={handleOpen}>
                     <Bars3Icon className="w-7 h-7 text-black" />
                   </button>
@@ -440,6 +475,10 @@ export default function Home() {
                     <p className="font-semibold text-[#29272A]">
                       {patientbasic?.uhid || "Patient Name"}
                     </p>
+                    <ArrowRightStartOnRectangleIcon
+                        className="w-6 h-6 text-black cursor-pointer"
+                        onClick={handlelogout}
+                      />
                   </div>
                   <nav className="p-4 space-y-4">
                     {tabs.map((tab) => (
@@ -524,6 +563,8 @@ export default function Home() {
             </p>
 
             <div
+              ref={scrollRef}
+              onScroll={handleScroll} // use React onScroll
               className={`${roboto.className} font-medium text-lg h-full p-4 mb-4   text-gray-700 overflow-y-auto max-h-[600px] inline-scroll`}
             >
               <p>
@@ -657,7 +698,14 @@ export default function Home() {
                     setTermsopen(false);
                     setshowresetpassword(true);
                   }}
-                  className={`${raleway.className} font-semibold text-lg px-12 py-2 rounded-md  bg-[#2F447A] text-white cursor-pointer`}
+                  disabled={!canAgree}
+                  className={`${
+                    raleway.className
+                  } font-semibold text-lg px-12 py-2 rounded-md ${
+                    canAgree
+                      ? "bg-[#2F447A] text-white cursor-pointer"
+                      : "bg-gray-400 text-gray-200 cursor-not-allowed"
+                  }`}
                 >
                   Agree
                 </button>
@@ -722,13 +770,60 @@ export default function Home() {
                 <label className="text-base text-gray-700">
                   Confirm Password
                 </label>
-                <input
+                {/* <input
                   type="text"
                   className="w-full border-b-2 border-gray-400 outline-none px-2 py-2 text-lg bg-transparent text-black"
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   placeholder="Confirm new password"
-                />
+                /> */}
+                <div className="relative w-full">
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    placeholder="Password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    className={`${poppins.className} w-full border-b-2 border-gray-400 outline-none px-2 py-2 text-lg bg-transparent text-black`}
+                  />
+                  {/* Password show/hide icon placeholder on right */}
+                  <button
+                    type="button"
+                    className="absolute top-1/2 right-3 -translate-y-1/2 cursor-pointer text-gray-500 hover:text-gray-700"
+                    aria-label="Toggle Password Visibility"
+                    onClick={() => setshowPassword((prev) => !prev)}
+                  >
+                    {!showPassword ? (
+                      <svg
+                        width="22"
+                        height="14"
+                        viewBox="0 0 22 14"
+                        fill="none"
+                        xmlns="http://www.w3.org/2000/svg"
+                      >
+                        <path
+                          d="M1.8813 8.95454C2.78664 4.607 6.57133 1.51792 10.8286 1.51792C15.0845 1.51792 18.8692 4.607 19.7759 8.95454C19.8118 9.12705 19.9148 9.27823 20.0622 9.37483C20.2095 9.47142 20.3893 9.50551 20.5618 9.4696C20.7343 9.43369 20.8855 9.33072 20.9821 9.18334C21.0787 9.03596 21.1127 8.85624 21.0768 8.68373C20.0454 3.73882 15.731 0.19043 10.8286 0.19043C5.92616 0.19043 1.61181 3.73882 0.580352 8.68373C0.544441 8.85624 0.578532 9.03596 0.675126 9.18334C0.77172 9.33072 0.922904 9.43369 1.09542 9.4696C1.26794 9.50551 1.44765 9.47142 1.59503 9.37483C1.74241 9.27823 1.84538 9.12705 1.8813 8.95454V8.95454ZM10.8153 4.17291C12.0476 4.17291 13.2294 4.66242 14.1007 5.53375C14.972 6.40509 15.4615 7.58688 15.4615 8.81913C15.4615 10.0514 14.972 11.2332 14.1007 12.1045C13.2294 12.9758 12.0476 13.4654 10.8153 13.4654C9.58306 13.4654 8.40128 12.9758 7.52994 12.1045C6.65861 11.2332 6.1691 10.0514 6.1691 8.81913C6.1691 7.58688 6.65861 6.40509 7.52994 5.53375C8.40128 4.66242 9.58306 4.17291 10.8153 4.17291V4.17291Z"
+                          fill="#949BA5"
+                        />
+                      </svg>
+                    ) : (
+                      <svg
+                        width="22"
+                        height="14"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        xmlns="http://www.w3.org/2000/svg"
+                      >
+                        <path
+                          d="M17.94 17.94C16.11 19.22 13.98 20 12 20C7 20 2.73 16.11 1 12C1.73947 10.1399 2.98478 8.51516 4.6 7.28M9.9 5.1C10.59 5.03 11.29 5 12 5C17 5 21.27 8.89 23 13C22.4311 14.3882 21.588 15.6563 20.52 16.73M1 1L23 23"
+                          stroke="#949BA5"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
+                      </svg>
+                    )}
+                  </button>
+                </div>
               </div>
 
               {/* Submit Button */}

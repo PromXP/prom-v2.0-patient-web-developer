@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect, use } from "react";
+import React, { useState, useEffect, useRef } from "react";
 
 import { Raleway, Inter, Poppins, ABeeZee, Roboto } from "next/font/google";
 
@@ -32,10 +32,32 @@ const roboto = Roboto({
 });
 
 const Terms = ({ isTermsopen, isTermsclose }) => {
+  const [canAgree, setCanAgree] = useState(false);
+  const scrollRef = useRef(null);
+
+  // check scroll position
+  // const handleScroll = () => {
+  //   const el = scrollRef.current;
+  //   if (el) {
+  //     const isAtBottom = el.scrollTop + el.clientHeight >= el.scrollHeight - 5;
+  //     if (isAtBottom) {
+  //       setCanAgree(true);
+  //     }
+  //   }
+  // };
+
+  // useEffect(() => {
+  //   const el = scrollRef.current;
+  //   if (el) {
+  //     el.addEventListener("scroll", handleScroll);
+  //     return () => el.removeEventListener("scroll", handleScroll);
+  //   }
+  // }, []);
+
   const [accepted, setAccepted] = useState(false);
 
   const handleProceed = () => {
-    sessionStorage.setItem("terms",1);
+    sessionStorage.setItem("terms", 1);
     isTermsclose();
   };
 
@@ -62,7 +84,8 @@ const Terms = ({ isTermsopen, isTermsclose }) => {
         </p>
 
         <div
-          className={`${roboto.className} font-medium text-lg h-full p-4 mb-4   text-gray-700 overflow-y-auto max-h-[600px] inline-scroll`}
+          ref={scrollRef}
+          className={`${roboto.className} font-medium text-lg p-4 mb-4   text-gray-700 overflow-y-auto max-h-[600px] inline-scroll`}
         >
           <p>
             Welcome to XoLabs Pvt Ltd. By accessing or using our
@@ -149,8 +172,7 @@ const Terms = ({ isTermsopen, isTermsclose }) => {
             <strong>9. Intellectual Property</strong>
             <br />
             All content, branding, and technology on this platform are owned by
-            XoLabs Pvt Ltd and protected by
-            copyright and trademark laws.
+            XoLabs Pvt Ltd and protected by copyright and trademark laws.
             <br />
             <br />
             <strong>10. Termination</strong>
@@ -168,8 +190,8 @@ const Terms = ({ isTermsopen, isTermsclose }) => {
             <br />
             <strong>12. Governing Law</strong>
             <br />
-            These Terms are governed by the laws of India. Any
-            disputes shall be resolved in the courts of Chennai, Tamil Nadu.
+            These Terms are governed by the laws of India. Any disputes shall be
+            resolved in the courts of Chennai, Tamil Nadu.
             <br />
             <br />
             <strong>13. Changes to Terms</strong>
@@ -190,13 +212,23 @@ const Terms = ({ isTermsopen, isTermsclose }) => {
         </div>
 
         <div className={`w-full flex justify-end`}>
-          <div className="flex space-x-4 ">
+          <div className={`flex space-x-4 ${
+                canAgree === "yes"
+                  ? "cursor-pointer"
+                  : "cursor-not-allowed"
+              }`}>
             <button
               onClick={handleProceed}
-              className={`${raleway.className} font-semibold text-lg px-12 py-2 rounded-md  bg-[#2F447A] text-white cursor-pointer`}
+              disabled={!canAgree}
+              className={`${raleway.className} font-semibold text-lg px-12 py-2 rounded-md ${
+                canAgree
+                  ? "bg-[#2F447A] text-white cursor-pointer"
+                  : "bg-gray-400 text-gray-200 cursor-not-allowed"
+              }`}
             >
               Agree
             </button>
+
           </div>
         </div>
       </div>
