@@ -1803,14 +1803,14 @@ const Questionnaire = ({dashboardpage}) => {
       }
       totalScore += score1;
     }
-    // console.log("Total KSS Pre Op Answers: ", totalScore);
 
-    const minScore = -7;
-    const maxScore = 180;
+    const minScore = 3;
+    const maxScore = 35;
     const normalizedScore = Math.max(
       0,
       ((totalScore - minScore) / (maxScore - minScore)) * 100
     );
+
 
     return Math.round(normalizedScore);
   }

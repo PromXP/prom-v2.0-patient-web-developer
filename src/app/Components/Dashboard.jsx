@@ -167,6 +167,8 @@ useEffect(() => {
   merged = merged.filter((q) => {
     if (!q.deadline) return false;
 
+    return true;
+
     const deadlineDate = new Date(q.deadline);
     const diffDays = (today - deadlineDate) / (1000 * 60 * 60 * 24);
 
