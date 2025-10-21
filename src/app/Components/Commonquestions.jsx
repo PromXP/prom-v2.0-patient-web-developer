@@ -34,7 +34,7 @@ const roboto = Roboto({
   variable: "--font-roboto", // use a matching variable name
 });
 
-const Commonquestions = ({ isOpen, onClose, onSubmit }) => {
+const Commonquestions = ({ isOpen, onClose, onSubmit, onCancel }) => {
   const [filledBy, setFilledBy] = useState("Self");
   const [whoFilled, setWhoFilled] = useState("");
   const [otherPain, setOtherPain] = useState("No");
@@ -152,10 +152,16 @@ const Commonquestions = ({ isOpen, onClose, onSubmit }) => {
         </div>
 
         {/* Buttons */}
-        <div className="flex justify-center gap-4 mt-4">
+        <div className="flex justify-between gap-4 mt-4">
+           <button
+            onClick={onCancel}
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 cursor-pointer"
+          >
+            Cancel
+          </button>
           <button
             onClick={handleSubmit}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 cursor-pointer"
+            className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 cursor-pointer"
           >
             Submit
           </button>

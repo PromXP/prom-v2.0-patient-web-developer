@@ -11,8 +11,9 @@ import { Raleway, Inter, Poppins } from "next/font/google";
 
 import MainBg from "@/app/assets/mainbg.png";
 import MainsubBg from "@/app/assets/mainsubbg.png";
-import Logo from "@/app/assets/logo.png";
+import Logo from "@/app/assets/xolabslogo.png";
 import AdminImage from "@/app/assets/patientlogin.png";
+import LoginCover from "@/app/assets/logincover.jpg";
 
 const raleway = Raleway({
   subsets: ["latin"],
@@ -32,7 +33,7 @@ const poppins = Poppins({
   variable: "--font-inter", // optional CSS variable name
 });
 
-const Login = ({ isTermsopen, isTermsclose, onLoginSuccess  }) => {
+const Login = ({ isTermsopen, isTermsclose, onLoginSuccess }) => {
   const useWindowSize = () => {
     const [size, setSize] = useState({
       width: 0,
@@ -57,7 +58,7 @@ const Login = ({ isTermsopen, isTermsclose, onLoginSuccess  }) => {
 
   const { width, height } = useWindowSize();
 
-   const [loginlock, setloginlock] = useState(false);
+  const [loginlock, setloginlock] = useState(false);
 
   const [userUHID, setuserUHID] = useState("");
   const [userPassword, setuserPassword] = useState("");
@@ -67,9 +68,9 @@ const Login = ({ isTermsopen, isTermsclose, onLoginSuccess  }) => {
   const [response, setResponse] = useState(null);
 
   const fetchData = async () => {
-    if (!userUHID.trim()) return showWarning("UHID / PHONE is required");
+    if (!userUHID.trim()) return showWarning("UHID / EMAIL / PHONE is required");
     if (!userPassword.trim()) return showWarning("PASSWORD is required");
-     setloginlock(true);
+    setloginlock(true);
     try {
       const res = await axios.post(`${API_URL}auth/login`, {
         identifier: userUHID,
@@ -89,16 +90,16 @@ const Login = ({ isTermsopen, isTermsclose, onLoginSuccess  }) => {
         sessionStorage.setItem("loginclose", "false"); // keep session alive for reload
         onLoginSuccess(res.data.user.uhid);
       }
-setloginlock(false);
+      setloginlock(false);
+      setuserUHID("");
+      setuserPassword("");
       isTermsclose();
-
     } catch (err) {
       setloginlock(false);
       showWarning("Login failed. Please check your credentials.");
       // console.error("POST error:", err);
     }
   };
-
 
   const showWarning = (message) => {
     setAlertMessage(message);
@@ -148,7 +149,6 @@ setloginlock(false);
   //   setTimeout(() => setshowAlert(false), 3000);
   // };
 
-
   const handlereset = async (e) => {
     if (!resetUHID) {
       showWarning("Please enter your UHID");
@@ -159,18 +159,32 @@ setloginlock(false);
       return;
     }
 
-    try {
-      const res = await axios.post(`${API_URL}request_password_reset?uhid=${resetUHID}&email=${resetEmail}`);
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (resetEmail && !emailRegex.test(resetEmail)) {
+      showWarning("Please enter a valid email address");
+      setResetEmail("");
+      return;
+    }
 
+     setloginlock(true);
+
+    try {
+      const res = await axios.post(
+        `${API_URL}request_password_reset?uhid=${resetUHID}&role=patient&email=${resetEmail}`
+      );
 
       showWarning("Password reset link sent to you registered email");
       setloginlock(false);
       setuserUHID("");
       setuserPassword("");
+      setresetUHID("");
+      setResetEmail("");
+      setShowForgotPassword(false);
     } catch (err) {
       setloginlock(false);
       setuserUHID("");
       setuserPassword("");
+      
       if (err.response) {
         let errorMsg = err.response.data?.detail || "Login failed";
 
@@ -188,7 +202,6 @@ setloginlock(false);
     }
   };
 
-
   if (!isTermsopen) return null;
 
   return (
@@ -204,9 +217,9 @@ setloginlock(false);
       </div>
       <div className="w-full h-full absolute inset-0 p-2 box-border rounded-4xl ">
         <div className="w-full h-full relative rounded-4xl border-white border-[1px] bg-white/10 ring-1 ring-white/30 backdrop-blur-lg p-3 shadow-[0_0_0_0.5px_rgba(255,255,255,0.3)] flex flex-row">
-          <div className="w-full h-full relative rounded-4xl bg-white/10 backdrop-blur-lg p-3 shadow-[0_0_0_0.5px_rgba(255,255,255,0.3)] flex flex-row justify-center items-center">
+          <div className="w-full h-full relative rounded-4xl bg-white/10 backdrop-blur-lg p-3 shadow-[0_0_0_0.5px_rgba(255,255,255,0.3)] flex flex-row justify-center items-center ">
             <div className="absolute top-6 left-6 flex flex-col items-center">
-              <Image src={Logo} alt="XoLabs" className="w-20 h-12" />
+              <Image src={Logo} alt="XoLabs" className="w-20 h-6" />
               <span
                 className={`${raleway.className} text-lg text-black font-semibold`}
               >
@@ -216,41 +229,41 @@ setloginlock(false);
 
             <div
               className={`${
-                width >= 550 ? "w-7/9 h-6/7" : "w-full h-full p-2"
+                width >= 550 ? "w-7/9 h-6/7" : "w-full h-full overflow-y-auto"
               }  bg-white rounded-[15px] flex ${
-                width >= 1000 ? "flex-row" : "flex-col"
-              } `}
+                width > 1024 ? "flex-row" : "flex-col"
+              }  ${width>1024?"": width>=550?"mt-6":" py-12"}`}
             >
-              {width >= 0 && (
+        
                 <div
                   className={`${
-                    width >= 1000 ? "basis-1/3 max-h-full" : "basis-full h-1/2"
+                    width > 1024 ? "basis-1/3 max-h-full" : "basis-full h-1/2"
                   }   py-4 pl-4 flex ${
-                    width >= 1000 ? "flex-row" : "flex-col"
+                    width > 1024 ? "flex-row" : "flex-col"
                   } justify-between items-center`}
                 >
                   <Image
-                    src={AdminImage}
+                    src={LoginCover}
                     alt="Admin"
                     className={`w-15/16 h-full object-cover  ${
-                      width >= 1000 ? "rounded-l-xl" : "rounded-xl"
+                      width > 1024 ? "rounded-l-xl" : "rounded-xl"
                     }`}
                   />
                   <div className={`bg-[#252425] opacity-20 h-7/9 w-0.5`}></div>
                 </div>
-              )}
+    
 
               <div
                 className={`relative flex flex-col justify-center items-center flex-1  text-gray-900 ${
-                  width < 1000 ? "basis-full p-4 h-1/2" : "basis-2/3 p-10"
+                  width <= 1024 ? "basis-full px-4 pt-4 pb-8 h-1/2" : "basis-2/3 p-10"
                 }`}
               >
                 {/* Top-left logo + role */}
 
                 {!showForgotPassword && (
                   <div
-                    className={`flex flex-col h-fit ${
-                      width >= 550 ? "w-5/7" : "w-full"
+                    className={`flex flex-col  ${
+                      width >= 550 ? "w-5/7 h-fit" : "w-full pb-4 h-full"
                     }`}
                   >
                     {/* Form */}
@@ -262,32 +275,60 @@ setloginlock(false);
 
                     <form
                       className={`flex flex-col space-y-6 ${
-                        width < 1000 ? "max-w-full" : "max-w-sm"
+                        width <= 1024 ? "max-w-full" : "max-w-sm"
                       }`}
                       onSubmit={(e) => {
                         e.preventDefault(); // Prevent form reload
                         fetchData(); // Call your login function
                       }}
                     >
-                      <input
-                        type="text"
-                        placeholder="UHID / Phone"
-                        value={userUHID}
-                        onChange={(e) => setuserUHID(e.target.value)}
-                        className={`${poppins.className} rounded-md p-3 text-sm text-gray-900 placeholder-black bg-[#F2F2F2] focus:outline-none focus:ring-2 focus:ring-teal-400`}
-                      />
-                      <div className="relative w-full">
+                      <div className="flex flex-col">
+                        <label
+                          htmlFor="userUHID"
+                          className={`${poppins.className} text-sm font-semibold text-gray-900 mb-1`}
+                        >
+                          UHID / Email / Phone
+                        </label>
                         <input
-                          type={showPassword ? "text" : "password"}
-                          placeholder="Password"
-                          value={userPassword}
-                          onChange={(e) => setuserPassword(e.target.value)}
-                          className={`${poppins.className} w-full rounded-md text-sm p-3 text-gray-900 placeholder-black bg-[#F2F2F2] focus:outline-none focus:ring-2 focus:ring-teal-400`}
+                          id="userUHID"
+                          type="text"
+                          placeholder="Enter UEID / Email / Phone"
+                          value={userUHID}
+                          onChange={(e) => {
+                            const value = e.target.value;
+                            // Allow letters, numbers, @, . only
+                            const safeValue = value.replace(
+                              /[^a-zA-Z0-9@.]/g,
+                              ""
+                            );
+                            setuserUHID(safeValue);
+                          }}
+                          maxLength={64} // Optional, works in HTML itself
+                          className={`${poppins.className} rounded-md p-3 text-sm text-gray-900 placeholder-gray-300 bg-white focus:outline-none focus:ring-2 focus:ring-teal-400`}
                         />
+                      </div>
+
+                      <div className="relative w-full">
+                        <label
+                          htmlFor="userPassword"
+                          className={`${poppins.className} text-sm font-semibold text-gray-900 mb-1`}
+                        >
+                          Password
+                        </label>
+                        <input
+                          id="userPassword"
+                          type={showPassword ? "text" : "password"}
+                          placeholder="Enter Password"
+                          value={userPassword}
+                          maxLength={30} // Optional, works in HTML itself
+                          onChange={(e) => setuserPassword(e.target.value)}
+                          className={`${poppins.className} w-full rounded-md text-sm p-3 text-gray-900 placeholder-gray-300 bg-white focus:outline-none focus:ring-2 focus:ring-teal-400`}
+                        />
+
                         {/* Password show/hide icon placeholder on right */}
                         <button
                           type="button"
-                          className="absolute top-1/2 right-3 -translate-y-1/2 cursor-pointer text-gray-500 hover:text-gray-700"
+                          className="absolute top-6/9 right-3 -translate-y-1/2 cursor-pointer text-gray-500 hover:text-gray-700"
                           aria-label="Toggle Password Visibility"
                           onClick={() => setshowPassword((prev) => !prev)}
                         >
@@ -338,33 +379,33 @@ setloginlock(false);
                         className={`${raleway.className} w-full text-lg cursor-pointer bg-[#2F447A] text-white rounded-md py-1 font-semibold hover:bg-gray-800 transition`}
                       >
                         {loginlock ? (
-                        // Spinner + text
-                        <div className="flex items-center justify-center space-x-2">
-                          <svg
-                            className="animate-spin h-5 w-5 text-white"
-                            xmlns="http://www.w3.org/2000/svg"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                          >
-                            <circle
-                              className="opacity-25"
-                              cx="12"
-                              cy="12"
-                              r="10"
-                              stroke="currentColor"
-                              strokeWidth="4"
-                            />
-                            <path
-                              className="opacity-75"
-                              fill="currentColor"
-                              d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
-                            />
-                          </svg>
-                          <span>Logging in...</span>
-                        </div>
-                      ) : (
-                        "Login"
-                      )}
+                          // Spinner + text
+                          <div className="flex items-center justify-center space-x-2">
+                            <svg
+                              className="animate-spin h-5 w-5 text-white"
+                              xmlns="http://www.w3.org/2000/svg"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                            >
+                              <circle
+                                className="opacity-25"
+                                cx="12"
+                                cy="12"
+                                r="10"
+                                stroke="currentColor"
+                                strokeWidth="4"
+                              />
+                              <path
+                                className="opacity-75"
+                                fill="currentColor"
+                                d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+                              />
+                            </svg>
+                            <span>Logging in...</span>
+                          </div>
+                        ) : (
+                          "Login"
+                        )}
                       </button>
                     </form>
                   </div>
@@ -372,7 +413,7 @@ setloginlock(false);
                 {showForgotPassword && (
                   <div
                     className={`flex flex-col h-fit ${
-                      width >= 550 ? "w-5/7" : "w-full"
+                      width >= 550 ? "w-5/7" : "w-full pb-4"
                     }`}
                   >
                     <h2
@@ -382,27 +423,57 @@ setloginlock(false);
                     </h2>
                     <form
                       className={`flex flex-col space-y-6 ${
-                        width < 1000 ? "max-w-full" : "max-w-sm"
+                        width <= 1024 ? "max-w-full" : "max-w-sm"
                       }`}
                       onSubmit={(e) => {
                         e.preventDefault(); // Prevent form reload
                         handlereset(); // Call your login function
                       }}
                     >
-                      <input
-                        type="text"
-                        placeholder="UHID"
-                        value={resetUHID}
-                        onChange={(e) => setresetUHID(e.target.value)}
-                        className={`${poppins.className} rounded-md p-3 text-sm text-gray-900 placeholder-black bg-[#F2F2F2] focus:outline-none focus:ring-2 focus:ring-teal-400`}
-                      />
-                      <input
-                        type="text"
-                        placeholder="Registered Email"
-                        value={resetEmail}
-                        onChange={(e) => setResetEmail(e.target.value)}
-                        className={`${poppins.className} rounded-md p-3 text-sm text-gray-900 placeholder-black bg-[#F2F2F2] focus:outline-none focus:ring-2 focus:ring-teal-400`}
-                      />
+                      <div className="flex flex-col">
+                        <label
+                          htmlFor="resetUHID"
+                          className={`${poppins.className} text-sm font-semibold text-gray-900 mb-1`}
+                        >
+                          UHID
+                        </label>
+                        <input
+                          id="resetUHID"
+                          type="text"
+                          required
+                          placeholder="Enter your UHID"
+                          value={resetUHID}
+                          onChange={(e) => {
+                            // Only allow letters, numbers, hyphen, underscore
+                            const filtered = e.target.value.replace(
+                              /[^a-zA-Z0-9-_]/g,
+                              ""
+                            );
+                            setresetUHID(filtered);
+                          }}
+                          maxLength={30} // Optional, works in HTML itself
+                          className={`${poppins.className} rounded-md p-3 text-sm text-gray-900 placeholder-gray-400 bg-white focus:outline-none focus:ring-2 focus:ring-teal-400`}
+                        />
+                      </div>
+
+                      <div className="flex flex-col">
+                        <label
+                          htmlFor="resetEmail"
+                          className={`${poppins.className} text-sm font-semibold text-gray-900 mb-1`}
+                        >
+                          Registered Email
+                        </label>
+                        <input
+                          id="resetEmail"
+                          type="text"
+                          required
+                          placeholder="Enter your registered email"
+                          value={resetEmail}
+                          onChange={(e) => setResetEmail(e.target.value)}
+                          maxLength={64} // Optional, works in HTML itself
+                          className={`${poppins.className} rounded-md p-3 text-sm text-gray-900 placeholder-gray-400 bg-white focus:outline-none focus:ring-2 focus:ring-teal-400`}
+                        />
+                      </div>
 
                       <div
                         className={`w-full flex ${
@@ -427,6 +498,9 @@ setloginlock(false);
                           onClick={() => {
                             setShowForgotPassword(false);
                             setResetEmail("");
+                            setresetUHID("");
+                            setuserUHID("");
+                            setuserPassword("");
                           }}
                         >
                           Back to Login

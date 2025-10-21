@@ -23,11 +23,12 @@ import {
   ChevronLeftIcon,
   ClipboardDocumentCheckIcon,
   XMarkIcon,
+  ArrowLeftIcon,
+  XCircleIcon,
 } from "@heroicons/react/16/solid";
 
 import MainBg from "@/app/assets/mainbg.png";
 import MainsubBg from "@/app/assets/mainsubbg.png";
-import Logo from "@/app/assets/logo.png";
 import Profile from "@/app/assets/profile.png";
 import Timepopup from "./Timepopup";
 import Commonquestions from "./Commonquestions";
@@ -56,7 +57,7 @@ const abeezee = ABeeZee({
   variable: "--font-abeezee", // use a matching variable name
 });
 
-const Questionnaire = ({dashboardpage}) => {
+const Questionnaire = ({ dashboardpage }) => {
   const router = useRouter();
   const useWindowSize = () => {
     const [size, setSize] = useState({
@@ -1730,13 +1731,16 @@ const Questionnaire = ({dashboardpage}) => {
 
       // console.log("PUT Payload:", payload);
 
-      const response = await axios.put(`${API_URL}questionnaires/update-score`, payload, {
-        timeout: 10000, // ⏱ timeout after 10s
-      });
+      const response = await axios.put(
+        `${API_URL}questionnaires/update-score`,
+        payload,
+        {
+          timeout: 10000, // ⏱ timeout after 10s
+        }
+      );
 
       showWarning("Questionnaire submitted successfully!");
       dashboardpage();
-
     } catch (error) {
       let message = "Something went wrong. Please try again.";
 
@@ -1752,7 +1756,7 @@ const Questionnaire = ({dashboardpage}) => {
 
   function calculateTotalScore(answers) {
     let totalScore = 0;
-// console.log("Answers:", answers);
+    // console.log("Answers:", answers);
     Object.values(answers).forEach((arr) => {
       if (arr.length > 0) {
         const answer = arr[0]; // assuming single-answer selection per question
@@ -1763,7 +1767,7 @@ const Questionnaire = ({dashboardpage}) => {
         }
       }
     });
-// console.log("Answers:", totalScore);
+    // console.log("Answers:", totalScore);
     return totalScore;
   }
 
@@ -1810,7 +1814,6 @@ const Questionnaire = ({dashboardpage}) => {
       0,
       ((totalScore - minScore) / (maxScore - minScore)) * 100
     );
-
 
     return Math.round(normalizedScore);
   }
@@ -2036,6 +2039,14 @@ const Questionnaire = ({dashboardpage}) => {
     handleSubmit();
   };
 
+  const handleCancel = () => {
+    if (typeof window !== "undefined") {
+      sessionStorage.removeItem("timepopup"); // if you ever need to reset manually
+      sessionStorage.removeItem("popup_answers");
+    }
+    dashboardpage();
+  };
+
   return (
     <div className={`w-full h-full py-12 ${width >= 800 ? "px-24" : "px-2"}`}>
       {questions.length === 0 ? (
@@ -2044,30 +2055,42 @@ const Questionnaire = ({dashboardpage}) => {
         </div>
       ) : (
         <div
-          className={`w-full  bg-white rounded-2xl py-12 flex  ${
-            width >= 800 ? "flex-row h-full" : "flex-col h-fit gap-20"
+          className={`relative w-full  bg-white rounded-2xl py-12 flex  ${
+            width >= 800 ? "flex-row h-full" : "flex-col h-fit gap-10 items-center justify-center"
           }`}
         >
+          <button
+            onClick={() => handleCancel()} // or use navigate(-1)
+            className={`absolute top-2 right-2  text-red-500 flex flex-row items-center px-4 py-1.5 rounded-md text-sm font-semibold hover:scale-120 cursor-pointer transition`}
+            title="Cancel the questionnaire"
+          >
+            < XCircleIcon className={`w-7 h-7 text-red-500`}/>
+          </button>
           <div
             className={`${
-              width >= 800 ? "w-2/5 py-4" : "w-full h-full gap-4"
-            } h-full flex flex-col items-center justify-between gap-8 overflow-y-auto  border-r-2 border-gray-300`}
+              width >= 800 ? "w-2/5 py-4 border-r-2 border-gray-300" : "w-full h-full gap-4 border-b-4 py-6 px-4 border-gray-300 justify-between"
+            } h-full flex flex-col items-center  gap-8 overflow-y-auto  `}
           >
             <p
               className={`${raleway.className} font-extrabold text-black text-2xl`}
             >
               Question Palette
             </p>
-            <div className={`w-full flex items-center justify-center`}>
+            <div className={`w-full flex items-center justify-center py-2`}>
               <div className="grid grid-cols-3 gap-14">
                 {questions.map((_, idx) => {
                   const isVisited = visited.has(idx);
                   const isAnswered = answers[idx] && answers[idx].length > 0;
+                  const isCurrent = idx === currentIndex; // 👈 check current question
 
                   let bgColor = "";
                   let textColor = "";
 
-                  if (isVisited) {
+                  if (isCurrent) {
+                    // 🎯 Highlight current question (example: dark blue)
+                    bgColor = "bg-[#2F447A]";
+                    textColor = "text-white";
+                  } else if (isVisited) {
                     bgColor = isAnswered ? "bg-[#4EADA7]" : "bg-[#DF6D6F]";
                     textColor = "text-white";
                   } else {
@@ -2128,9 +2151,10 @@ const Questionnaire = ({dashboardpage}) => {
                       onClick={() => handleOptionClick(option)}
                       className={`bg-[#F5F5F7] rounded-full py-2 px-6 text-[#373240] ${
                         inter.className
-                      } font-semibold text-base text-center w-fit cursor-pointer ${
+                      } font-semibold text-base text-center w-fit cursor-pointer hover:scale-120  transition ${
                         isSelected ? "ring-2 ring-[#4EADA7]" : ""
-                      }`}
+                      }`
+                    }
                     >
                       {option}
                     </div>
@@ -2175,11 +2199,14 @@ const Questionnaire = ({dashboardpage}) => {
           </div>
         </div>
       )}
-      {showInitialPopup && <Timepopup onProceed={handleProceed} />}
+      {showInitialPopup && (
+        <Timepopup onProceed={handleProceed} onCancel={handleCancel} />
+      )}
       <Commonquestions
         isOpen={popupOpen}
         onClose={() => setPopupOpen(false)}
         onSubmit={handlePopupSubmit}
+        onCancel={handleCancel}
       />
       {showConfirmation && (
         <Submitconfirmpop

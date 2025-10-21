@@ -29,7 +29,7 @@ import {
 
 import MainBg from "@/app/assets/mainbg.png";
 import MainsubBg from "@/app/assets/mainsubbg.png";
-import Logo from "@/app/assets/logo.png";
+import Logo from "@/app/assets/xolabslogo.png";
 import Profile from "@/app/assets/profile.png";
 import Dashboard from "@/app/Components/Dashboard";
 import Questionnaire from "./Components/Questionnaire";
@@ -114,6 +114,7 @@ export default function Home() {
   });
   const tabs = ["Dashboard"];
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
+   const [islogoutconfirm, setislogoutconfirm] = useState(false);
   const [nextTab, setNextTab] = useState(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isFullyHidden, setIsFullyHidden] = useState(true); // for hidden toggle
@@ -157,6 +158,8 @@ export default function Home() {
       sessionStorage.setItem("activetab", tab);
       setNextTab(tab);
       setIsConfirmOpen(true);
+      setIsSidebarOpen(false);
+
     } else {
       setActiveTab(tab);
       sessionStorage.setItem("activetab", tab);
@@ -169,11 +172,13 @@ export default function Home() {
     sessionStorage.removeItem("popup_answers");
     setActiveTab(nextTab);
     setIsConfirmOpen(false);
+    setIsSidebarOpen(false);
     setNextTab(null);
   };
 
   const cancelNavigation = () => {
     setIsConfirmOpen(false);
+    setIsSidebarOpen(true);
     setNextTab(null);
   };
 
@@ -235,6 +240,7 @@ useEffect(() => {
               : "Doctor",
           questionnaire_left: patient.Medical_Left ?? {},
           questionnaire_right: patient.Medical_Right ?? {},
+          profile: patient.Patient?.photo ?? "NA",
         };
 
         setpatientbasic(pickedData);
@@ -333,6 +339,9 @@ useEffect(() => {
   const handlelogout = () => {
     console.clear();
     setloginopen(true);
+    setislogoutconfirm(false);
+    setActiveTab("Dashboard");
+    setpatientbasic({});
     if (typeof window !== "undefined") {
       sessionStorage.removeItem("activetab");
       sessionStorage.removeItem("uhid");
@@ -340,6 +349,7 @@ useEffect(() => {
       sessionStorage.removeItem("activetab");
       sessionStorage.setItem("loginclose", "true");
     }
+    sessionStorage.clear();
   };
 
   const [showPassword, setshowPassword] = useState(false);
@@ -372,8 +382,8 @@ useEffect(() => {
               <div className={`w-full h-[10%]`}>
                 <div className="w-full h-full flex flex-row px-8">
                   <div className="w-1/5 h-full">
-                    <div className="w-fit h-full flex flex-col items-center justify-between">
-                      <Image src={Logo} alt="XoLabs" className="w-16 h-10" />
+                    <div className="w-fit h-full flex flex-col items-center justify-center gap-1">
+                      <Image src={Logo} alt="XoLabs" className="w-16 h-6" />
                       <span
                         className={`${raleway.className} text-base font-semibold text-black`}
                       >
@@ -382,9 +392,9 @@ useEffect(() => {
                     </div>
                   </div>
                   <div
-                    className={`w-4/5 h-full flex flex-row justify-between border-gray-300 border-b-2`}
+                    className={`w-4/5 h-full flex flex-row justify-end border-gray-300 border-b-2`}
                   >
-                    <div className={`w-fit flex flex-row gap-20 h-full`}>
+                    {/* <div className={`w-fit flex flex-row gap-20 h-full`}>
                       {tabs.map((tab) => (
                         <button
                           key={tab}
@@ -398,11 +408,11 @@ useEffect(() => {
                           {tab}
                         </button>
                       ))}
-                    </div>
+                    </div> */}
                     <div className="w-2/7 flex flex-row items-center justify-end gap-8">
                       <ArrowRightStartOnRectangleIcon
                         className="w-6 h-6 text-black cursor-pointer"
-                        onClick={handlelogout}
+                        onClick={()=> setislogoutconfirm(true)}
                       />
                       <div
                         className={`w-fit flex flex-row h-full items-center gap-4`}
@@ -410,13 +420,15 @@ useEffect(() => {
                         <p
                           className={`${inter.className} font-semibold text-[#29272A]`}
                         >
-                          {patientbasic?.uhid || "Patient Name"}
+                          {patientbasic?.name || "Patient Name"}
                         </p>
 
                         <Image
-                          src={Profile}
-                          alt="Support"
-                          className="w-10 h-10"
+                          src={patientbasic?.profile === "NA" ? Profile : patientbasic?.profile}
+                          width={40}
+                            height={40}
+                          alt="Profile"
+                          className="w-10 h-10 border-1 border-black rounded-full bg-white"
                         />
                       </div>
                     </div>
@@ -428,9 +440,9 @@ useEffect(() => {
                 {/* Top Bar with Hamburger */}
                 <div className="w-full flex items-center justify-between px-4 py-3 border-b border-gray-300">
                   <div className="flex items-center gap-2">
-                    <Image src={Logo} alt="XoLabs" className="w-16 h-10" />
+                    <Image src={Logo} alt="XoLabs" className="w-16 h-full" />
                     <span
-                      className={`${raleway.className} text-lg font-semibold text-black`}
+                      className={`${raleway.className} text-lg font-semibold text-black p-0`}
                     >
                       Patient
                     </span>
@@ -471,13 +483,19 @@ useEffect(() => {
                     </button>
                   </div>
                   <div className="w-full flex flex-row items-center justify-center gap-6 py-4">
-                    <Image src={Profile} alt="Support" className="w-10 h-10" />
+                    <Image
+                          src={patientbasic?.profile === "NA" ? Profile : patientbasic?.profile}
+                          width={40}
+                            height={40}
+                          alt="Profile"
+                          className="w-10 h-10 border-1 border-black rounded-full bg-white"
+                        />
                     <p className="font-semibold text-[#29272A]">
-                      {patientbasic?.uhid || "Patient Name"}
+                      {patientbasic?.name || "Patient Name"}
                     </p>
                     <ArrowRightStartOnRectangleIcon
                         className="w-6 h-6 text-black cursor-pointer"
-                        onClick={handlelogout}
+                        onClick={()=> setislogoutconfirm(true)}
                       />
                   </div>
                   <nav className="p-4 space-y-4">
@@ -542,6 +560,46 @@ useEffect(() => {
           </div>
         </div>
       )}
+
+      {islogoutconfirm && (
+        <div
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+          onClick={cancelNavigation} // close modal on outside click
+        >
+          <div
+            className="bg-white rounded-xl p-6 max-w-sm w-full flex flex-col items-center"
+            onClick={(e) => e.stopPropagation()} // prevent close on modal content click
+          >
+            <h2
+              className={`text-xl font-bold mb-4 text-black ${poppins.className}`}
+            >
+              Confirm
+            </h2>
+            <p
+              className={`mb-6 text-base font-medium text-black text-center ${poppins.className}`}
+            >
+              Are you sure to sign out?.
+            </p>
+            <div
+              className={`flex justify-end gap-4 ${poppins.className} font-semibold`}
+            >
+              <button
+                className="px-4 py-2 rounded bg-gray-300 text-white hover:bg-gray-400 cursor-pointer"
+                onClick={()=> setislogoutconfirm(false)}
+              >
+                No
+              </button>
+              <button
+                className="px-4 py-2 rounded bg-[#4EADA7] text-white hover:bg-[#3b8f8b] cursor-pointer"
+                onClick={handlelogout}
+              >
+                Yes
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {termsopen && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center"

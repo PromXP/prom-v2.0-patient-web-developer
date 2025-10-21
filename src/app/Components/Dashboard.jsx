@@ -26,7 +26,7 @@ import {
 
 import MainBg from "@/app/assets/mainbg.png";
 import MainsubBg from "@/app/assets/mainsubbg.png";
-import Logo from "@/app/assets/logo.png";
+
 import Profile from "@/app/assets/profile.png";
 
 const raleway = Raleway({
@@ -87,112 +87,134 @@ const Dashboard = ({ questionnairepage, patient }) => {
     setTimeout(() => setshowAlert(false), 4000);
   };
 
+  const [selected, setSelected] = useState("Pending");
+
+  const statuses = [
+    { name: "Pending", color: "bg-yellow-500" },
+    { name: "Completed", color: "bg-green-500" },
+    { name: "Expired", color: "bg-red-500" },
+  ];
+
   const [transformedData, setTransformedData] = useState([]);
 
   const mapQuestionnaireData = (assignedList, leg) => {
-  return assignedList.map((item) => {
-    const name = item.name.toLowerCase();
-    let title = item.name;
-    let questions = 0;
-    let duration = "";
+    return assignedList.map((item) => {
+      const name = item.name.toLowerCase();
+      let title = item.name;
+      let questions = 0;
+      let duration = "";
 
-    if (name.includes("oxford knee score") || name.includes("oks")) {
-      title = "Oxford Knee Score (OKS)";
-      questions = 12;
-      duration = "15 min";
-    } else if (name.includes("short form - 12") || name.includes("sf12")) {
-      title = "Short Form - 12 (SF-12)";
-      questions = 12;
-      duration = "10–15 min";
-    } else if (name.includes("koos")) {
-      title = "Knee Injury and Osteoarthritis Outcome Score, Joint Replacement (KOOS, JR)";
-      questions = 7;
-      duration = "10–12 min";
-    } else if (name.includes("knee society score") || name.includes("kss")) {
-      title = "Knee Society Score (KSS)";
-      questions = 8;
-      duration = "10–12 min";
-    } else if (name.includes("forgotten joint score") || name.includes("fjs")) {
-      title = "Forgotten Joint Score (FJS)";
-      questions = 12;
-      duration = "10–15 min";
-    }
+      if (name.includes("oxford knee score") || name.includes("oks")) {
+        title = "Oxford Knee Score (OKS)";
+        questions = 12;
+        duration = "15 min";
+      } else if (name.includes("short form - 12") || name.includes("sf12")) {
+        title = "Short Form - 12 (SF-12)";
+        questions = 12;
+        duration = "10–15 min";
+      } else if (name.includes("koos")) {
+        title =
+          "Knee Injury and Osteoarthritis Outcome Score, Joint Replacement (KOOS, JR)";
+        questions = 7;
+        duration = "10–12 min";
+      } else if (name.includes("knee society score") || name.includes("kss")) {
+        title = "Knee Society Score (KSS)";
+        questions = 8;
+        duration = "10–12 min";
+      } else if (
+        name.includes("forgotten joint score") ||
+        name.includes("fjs")
+      ) {
+        title = "Forgotten Joint Score (FJS)";
+        questions = 12;
+        duration = "10–15 min";
+      }
 
-    return {
-      completed: item.completed, // 🔹 keep the raw boolean for sorting
-      status: item.completed ? "Completed" : "Pending",
-      period: item.period,
-      title,
-      periodShort: item.period,
-      questions,
-      duration,
-      assigned_date: item.assigned_date,
-      deadline: item.deadline,
-      leg,
-    };
-  });
-};
-
-useEffect(() => {
-  if (!patientbasic) return;
-
-  const today = new Date();
-
-  const transformSide = (sideData, leg) => {
-    const questionnaires = [];
-
-    Object.entries(sideData).forEach(([title, periods]) => {
-      Object.entries(periods).forEach(([period, data]) => {
-        questionnaires.push({
-          name: title,
-          period,
-          completed: data.completed,
-          assigned_date: data.assigned_date ?? null,
-          deadline: data.deadline,
-          surgery_date: data.surgery_date ?? null,
-          leg,
-        });
-      });
+      return {
+        completed: item.completed, // 🔹 keep the raw boolean for sorting
+        status: item.completed ? "Completed" : "Pending",
+        period: item.period,
+        title,
+        periodShort: item.period,
+        questions,
+        duration,
+        deadline: item.deadline,
+        leg,
+      };
     });
-
-    return mapQuestionnaireData(questionnaires, leg);
   };
 
-  const leftData = transformSide(patientbasic.questionnaire_left, "Left");
-  const rightData = transformSide(patientbasic.questionnaire_right, "Right");
+  useEffect(() => {
+    if (!patientbasic) return;
 
-  let merged = [...leftData, ...rightData];
+    const todayStr = new Date().toISOString().split("T")[0];
+    const todayDate = new Date(todayStr);
 
-  // 🔹 Step 2: Filter by deadline rules
-  merged = merged.filter((q) => {
-    if (!q.deadline) return false;
+    const transformSide = (sideData, leg) => {
+      const questionnaires = [];
 
-    const deadlineDate = new Date(q.deadline);
-    const diffDays = (today - deadlineDate) / (1000 * 60 * 60 * 24);
+      Object.entries(sideData).forEach(([title, periods]) => {
+        Object.entries(periods).forEach(([period, data]) => {
+          questionnaires.push({
+            name: title,
+            period,
+            completed: data.completed,
+            deadline: data.deadline,
+            surgery_date: data.surgery_date ?? null,
+            leg,
+          });
+        });
+      });
 
-    // Include if deadline passed or within -14 days
-    return today >= deadlineDate || (diffDays > -14 && diffDays < 0);
-  });
+      return mapQuestionnaireData(questionnaires, leg);
+    };
 
-  // 🔹 Step 3: Sort
-  merged.sort((a, b) => {
-    // 1️⃣ Pending before Completed
-    if (a.completed !== b.completed) {
-      return a.completed ? 1 : -1;
-    }
+    const leftData = transformSide(patientbasic.questionnaire_left, "Left");
+    const rightData = transformSide(patientbasic.questionnaire_right, "Right");
 
-    // 2️⃣ Left before Right
-    if (a.leg !== b.leg) {
-      return a.leg === "Left" ? -1 : 1;
-    }
+    let merged = [...leftData, ...rightData];
 
-    // 3️⃣ Sort by deadline
-    return new Date(a.deadline) - new Date(b.deadline);
-  });
+    // ✅ Update status to "Expired" if past deadline and not completed
+    merged = merged.map((q) => {
+      if (!q.deadline) return q;
 
-  setTransformedData(merged);
-}, [patientbasic]);
+      const deadlineStr = q.deadline.split("T")[0];
+      const deadlineDate = new Date(deadlineStr);
 
+      if (Number(q.completed) === 0 && todayDate > deadlineDate) {
+        return { ...q, status: "Expired" };
+      }
+      return q;
+    });
+
+    // ✅ Apply filtering based on selected tab
+    merged = merged.filter((q) => {
+      const completed = Number(q.completed);
+      const deadlineStr = q.deadline?.split("T")[0];
+      const deadlineDate = new Date(deadlineStr);
+
+      if (selected === "Pending") {
+        return completed === 0 && todayDate <= deadlineDate;
+      } else if (selected === "Completed") {
+        return completed === 1;
+      } else if (selected === "Expired") {
+        return completed === 0 && todayDate > deadlineDate;
+      }
+      return true;
+    });
+
+    // ✅ Sort for better display order
+    merged.sort((a, b) => {
+      if (a.status !== b.status) {
+        const order = { Pending: 1, Expired: 2, Completed: 3 };
+        return order[a.status] - order[b.status];
+      }
+      if (a.leg !== b.leg) return a.leg === "Left" ? -1 : 1;
+      return new Date(a.deadline) - new Date(b.deadline);
+    });
+
+    setTransformedData(merged);
+  }, [patientbasic, selected]);
 
   const handlequestionnaireclick = (title, period, leg) => {
     // console.log("Questionnaire Data", transformedData); // log the mapped value here
@@ -208,10 +230,30 @@ useEffect(() => {
     questionnairepage();
   };
 
+  const [leftDoctor, setLeftDoctor] = useState(null);
+  const [rightDoctor, setRightDoctor] = useState(null);
+
+  useEffect(() => {
+    async function fetchDoctorNames() {
+      try {
+        const [leftRes, rightRes] = await Promise.all([
+          axios.get(`${API_URL}getdoctorname/${patientbasic?.left_doctor}`),
+          axios.get(`${API_URL}getdoctorname/${patientbasic?.right_doctor}`),
+        ]);
+        setLeftDoctor(leftRes.data.doctor_name);
+        setRightDoctor(rightRes.data.doctor_name);
+      } catch {
+        setLeftDoctor(null);
+        setRightDoctor(null);
+      }
+    }
+    if (patientbasic) fetchDoctorNames();
+  }, [patientbasic]);
+
   return (
     <>
       <div className="w-full h-full">
-        <div className={`w-full pt-8 ${width < 800 ? "h-full" : "h-[35%]"}`}>
+        <div className={`w-full pt-4 ${width < 800 ? "h-full" : "h-[30%]"}`}>
           <div
             className={`w-full h-full flex ${
               width < 800 ? "flex-col" : "flex-row"
@@ -255,12 +297,13 @@ useEffect(() => {
             >
               <div
                 className={`w-full h-1/2 flex flex-col items-end justify-center`}
+                title="Left / Right Knee Doctor"
               >
                 <p
                   className={`${raleway.className} font-extrabold text-2xl text-white`}
                 >
-                  {patientbasic?.left_doctor || "Left Doctor NA"} /{" "}
-                  {patientbasic?.right_doctor || "Right Doctor NA"}
+                  {leftDoctor ? "Dr. " + leftDoctor : "NA"} /{" "}
+                  {rightDoctor ? "Dr. " + rightDoctor : "NA"}
                 </p>
                 <p
                   className={`${abeezee.className} font-normal text-lg text-white`}
@@ -273,110 +316,163 @@ useEffect(() => {
         </div>
 
         <div
-          className={`w-full  flex items-center gap-8 ${
-            width < 800
-              ? "h-full py-8 overflow-y-auto flex-col inline-scroll"
-              : "h-[65%] overflow-x-scroll flex-row inline-scroll"
-          } ${width < 480 ? "px-4" : "px-8"}`}
+          className={`${
+            width < 800 ? "h-fit" : "h-[10%]"
+          } flex flex-row justify-end items-center gap-4 py-4 w-full px-4`}
         >
-          {[...transformedData].map((item, index) => (
-            <div
-              key={index}
-              className={`shrink-0 whitespace-nowrap rounded-2xl shadow-2xl bg-white flex flex-col justify-between py-8 cursor-pointer ${
-                width < 800 ? "h-96 w-full" : "h-6/7 w-96"
-              } ${width < 500 ? "px-4" : "px-8"}`}
-              onClick={() =>
-                item.status === "Pending" &&
-                handlequestionnaireclick(item.title, item.period, item.leg)
-              }
+          {statuses.map((status) => (
+            <p
+              key={status.name}
+              onClick={() => setSelected(status.name)}
+              className={`
+            rounded-full px-3 py-1 cursor-pointer transform transition-all duration-200
+            ${status.color}
+            ${
+              selected === status.name
+                ? "ring-3 ring-[#2F447A]" // selected highlight
+                : "hover:scale-110 " // hover zoom
+            }
+          `}
             >
-              {/* Status */}
-              <div className="w-full flex justify-end">
-                <p
-                  className={`w-fit rounded-full px-3 py-1 ${
-                    item.status === "Completed"
-                      ? "bg-green-500"
-                      : "bg-yellow-500"
-                  } ${abeezee.className} font-normal text-base text-white`}
-                >
-                  {item.status}
-                </p>
-              </div>
-
-              {/* Title + Leg */}
-              <div className="w-full flex flex-col gap-4">
-                <p
-                  className={`${raleway.className} font-extrabold text-xl text-[#1E1E1E] break-words whitespace-normal`}
-                >
-                  {item.title}
-                </p>
-                <p
-                  className={`${abeezee.className} font-normal text-lg text-black`}
-                >
-                  {item.leg} Knee | {item.periodShort}
-                </p>
-              </div>
-
-              {/* Deadline, Questions, Duration */}
-              <div
-                className={`w-full flex ${
-                  width < 450
-                    ? "flex-col items-center gap-4"
-                    : "flex-row justify-between"
-                }`}
-              >
-                <div
-                  className={`${
-                    width < 450 ? "w-full" : "w-1/3"
-                  } flex flex-col items-start break-words`}
-                >
-                  <p
-                    className={`${abeezee.className} font-normal text-sm text-[#3C3C3C]`}
-                  >
-                    Deadline
-                  </p>
-                  <p
-                    className={`${poppins.className} font-extrabold text-xl text-black text-start break-words whitespace-normal`}
-                  >
-                    {item.deadline}
-                  </p>
-                </div>
-
-                <div
-                  className={`${
-                    width < 450 ? "w-full" : "w-2/3"
-                  } flex flex-row justify-between`}
-                >
-                  <div className="w-1/2 flex flex-col items-start">
-                    <p
-                      className={`${abeezee.className} font-normal text-sm text-[#3C3C3C]`}
-                    >
-                      No. of Qn
-                    </p>
-                    <p
-                      className={`${poppins.className} font-extrabold text-xl text-black`}
-                    >
-                      {item.questions}
-                    </p>
-                  </div>
-
-                  <div className="w-1/2 flex flex-col items-start">
-                    <p
-                      className={`${abeezee.className} font-normal text-sm text-[#3C3C3C]`}
-                    >
-                      Duration
-                    </p>
-                    <p
-                      className={`${poppins.className} font-extrabold text-xl text-black`}
-                    >
-                      {item.duration || "15 min"}
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
+              {status.name}
+            </p>
           ))}
         </div>
+
+        {transformedData.length > 0 ? (
+          <div
+            className={`w-full flex items-center gap-8 ${
+              width < 800
+                ? "h-full py-8 overflow-y-auto flex-col inline-scroll"
+                : "h-[60%] overflow-x-scroll flex-row inline-scroll"
+            } ${width < 480 ? "px-4" : "px-8"}`}
+          >
+            {[...transformedData].map((item, index) => {
+              const isClickable = item.status === "Pending"; // ✅ Only pending items clickable
+
+              return (
+                <div
+                  key={index}
+                  className={`
+          shrink-0 whitespace-nowrap rounded-2xl shadow-2xl bg-white flex flex-col justify-between py-8
+          ${width < 800 ? "h-96 w-full" : "h-6/7 w-96"}
+          ${width < 500 ? "px-4" : "px-8"}
+          ${
+            isClickable
+              ? "cursor-pointer hover:scale-105 transition-transform"
+              : "cursor-not-allowed opacity-70"
+          }
+        `}
+                  onClick={() => {
+                    if (isClickable) {
+                      handlequestionnaireclick(
+                        item.title,
+                        item.period,
+                        item.leg
+                      );
+                    }
+                  }}
+                  title={isClickable ? "Click to attend the questionnaire" : ""}
+                >
+                  {/* Status */}
+                  <div className="w-full flex justify-end">
+                    <p
+                      className={`w-fit rounded-full px-3 py-1 ${
+                        item.status === "Completed"
+                          ? "bg-green-500"
+                          : item.status === "Expired"
+                          ? "bg-red-500"
+                          : "bg-yellow-500"
+                      } ${abeezee.className} font-normal text-base text-white`}
+                    >
+                      {item.status}
+                    </p>
+                  </div>
+
+                  {/* Title + Leg */}
+                  <div className="w-full flex flex-col gap-4">
+                    <p
+                      className={`${raleway.className} font-extrabold text-xl text-[#1E1E1E] break-words whitespace-normal`}
+                    >
+                      {item.title}
+                    </p>
+                    <p
+                      className={`${abeezee.className} font-normal text-lg text-black`}
+                    >
+                      {item.leg} Knee | {item.periodShort}
+                    </p>
+                  </div>
+
+                  {/* Deadline, Questions, Duration */}
+                  <div
+                    className={`w-full flex ${
+                      width < 450
+                        ? "flex-col items-center gap-4"
+                        : "flex-row justify-between"
+                    }`}
+                  >
+                    <div
+                      className={`${
+                        width < 450 ? "w-full" : "w-1/3"
+                      } flex flex-col items-start break-words`}
+                    >
+                      <p
+                        className={`${abeezee.className} font-normal text-sm text-[#3C3C3C]`}
+                      >
+                        Deadline
+                      </p>
+                      <p
+                        className={`${poppins.className} font-extrabold text-xl text-black text-start break-words whitespace-normal`}
+                      >
+                        {item.deadline}
+                      </p>
+                    </div>
+
+                    <div
+                      className={`${
+                        width < 450 ? "w-full" : "w-2/3"
+                      } flex flex-row justify-between`}
+                    >
+                      <div className="w-1/2 flex flex-col items-start">
+                        <p
+                          className={`${abeezee.className} font-normal text-sm text-[#3C3C3C]`}
+                        >
+                          No. of Qn
+                        </p>
+                        <p
+                          className={`${poppins.className} font-extrabold text-xl text-black`}
+                        >
+                          {item.questions}
+                        </p>
+                      </div>
+
+                      <div className="w-1/2 flex flex-col items-start">
+                        <p
+                          className={`${abeezee.className} font-normal text-sm text-[#3C3C3C]`}
+                        >
+                          Duration
+                        </p>
+                        <p
+                          className={`${poppins.className} font-extrabold text-xl text-black`}
+                        >
+                          {item.duration || "15 min"}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+          <div className="w-full h-fit flex items-center justify-center pt-8">
+            <p
+              className={`${poppins.className} font-normal text-xl text-gray-500`}
+            >
+              No questionnaires are currently assigned to you.
+            </p>
+          </div>
+        )}
       </div>
       <style>
         {`

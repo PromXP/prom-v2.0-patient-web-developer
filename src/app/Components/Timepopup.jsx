@@ -34,7 +34,7 @@ const roboto = Roboto({
   variable: "--font-roboto", // use a matching variable name
 });
  
- const Timepopup = ({onProceed}) => {
+ const Timepopup = ({onProceed, onCancel}) => {
 
   const [mounted, setMounted] = useState(false);
 
@@ -57,12 +57,21 @@ const roboto = Roboto({
         <p className={` ${roboto.className} text-gray-600 font-normal text-center  text-base`}>
           This questionnaire takes approximately <span className="font-semibold">15 minutes</span> to complete.
         </p>
-        <button
-          onClick={onProceed}
-          className={`${roboto.className} font-normal mt-4 bg-green-600 hover:bg-green-700 text-white py-2 px-6 rounded-full transition duration-300 cursor-pointer`}
-        >
-          Proceed
-        </button>
+        <div className="flex justify-between gap-4 mt-4 w-3/4">
+           <button
+           onClick={onCancel}
+            className={`${roboto.className} px-6 py-2 bg-blue-600 text-white rounded-full hover:bg-blue-700 cursor-pointer`}
+          >
+            Cancel
+          </button>
+          <button
+            onClick={onProceed}
+            className={`${roboto.className} font-normal  bg-green-600 hover:bg-green-700 text-white py-2 px-6 rounded-full transition duration-300 cursor-pointer`}
+          >
+            Proceed
+          </button>
+        </div>
+        
       </div>
     </div>,
     document.body
